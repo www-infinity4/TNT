@@ -1,6 +1,7 @@
 (function(){
   "use strict";
   const STYLE_ID="infinity-channel-pip-style";
+  const CHANNELS_SRC="https://www-infinity4.github.io/TNT/channels.js?v=20260912c";
   let shell=null,placeholder=null,phiLayer=null,drag=null;
 
   function installStyle(){
@@ -19,6 +20,41 @@
       @media(max-width:640px){.infinity-channel-pip{width:min(58vw,270px)!important;right:9px;bottom:9px}.infinity-pip-tools button{min-width:34px;min-height:34px;padding:0 8px}.infinity-phi-layer iframe{padding-top:0}}
     `;
     document.head.appendChild(style);
+  }
+
+  function ensureRemote(){
+    if(window.InfinityChannelRemote||document.querySelector('script[data-infinity-channels]'))return;
+    const script=document.createElement("script");
+    script.src=CHANNELS_SRC;
+    script.dataset.infinityChannels="1";
+    document.head.appendChild(script);
+  }
+
+  function enhanceMediaPermissions(root=document){
+    root.querySelectorAll("iframe").forEach(frame=>{
+      const src=frame.getAttribute("src")||"";
+      if(!/youtube(?:-nocookie)?\.com|youtu\.be/i.test(src))return;
+      const existing=(frame.getAttribute("allow")||"").split(";").map(v=>v.trim()).filter(Boolean);
+      ["autoplay","encrypted-media","picture-in-picture","fullscreen"].forEach(token=>{
+        if(!existing.some(item=>item===token||item.startsWith(token+" ")))existing.push(token);
+      });
+      frame.setAttribute("allow",existing.join("; "));
+      frame.setAttribute("allowfullscreen","");
+    });
+  }
+
+  function watchPlayers(){
+    enhanceMediaPermissions();
+    const observer=new MutationObserver(records=>{
+      for(const record of records){
+        record.addedNodes.forEach(node=>{
+          if(node.nodeType!==1)return;
+          if(node.matches&&node.matches("iframe"))enhanceMediaPermissions(node.parentNode||document);
+          else if(node.querySelectorAll)enhanceMediaPermissions(node);
+        });
+      }
+    });
+    observer.observe(document.documentElement,{childList:true,subtree:true});
   }
 
   function findShell(){
@@ -41,15 +77,24 @@
   function requestSystemPiP(){
     try{
       if(window.InfinityAndroid&&typeof window.InfinityAndroid.enterPictureInPicture==="function"){
-        return window.InfinityAndroid.enterPictureInPicture();
+        const result=window.InfinityAndroid.enterPictureInPicture();
+        document.dispatchEvent(new CustomEvent("infinity:system-pip",{detail:{requested:true,mode:"android-bridge"}}));
+        return result===undefined?true:result;
       }
-      const video=document.querySelector("video");
+      const video=[...document.querySelectorAll("video")].find(v=>!v.paused&&!v.ended)||document.querySelector("video");
       if(video&&document.pictureInPictureEnabled&&!document.pictureInPictureElement&&typeof video.requestPictureInPicture==="function"){
         video.requestPictureInPicture().catch(()=>{});
+        document.dispatchEvent(new CustomEvent("infinity:system-pip",{detail:{requested:true,mode:"html-video"}}));
         return true;
       }
     }catch(_){}
     return false;
+  }
+
+  function prepareSharePiP(){
+    enhanceMediaPermissions();
+    floatPlayer();
+    requestSystemPiP();
   }
 
   function floatPlayer(){
@@ -110,14 +155,19 @@
     history.pushState({infinityPhi:true},"",location.href);
   }
 
+  function isShareTarget(target){return !!target.closest("#shareButton,.share-button,[data-share],button[aria-label*='Share'],button[title*='Share'],a[aria-label*='Share'],a[title*='Share']");}
+
   function bind(){
     installStyle();
-    document.addEventListener("click",event=>{if(event.target.closest("#shareButton,.share-button,[data-share],button[aria-label*='Share'],button[title*='Share']")){requestSystemPiP();floatPlayer();}},true);
+    ensureRemote();
+    watchPlayers();
+    document.addEventListener("pointerdown",event=>{if(isShareTarget(event.target))prepareSharePiP();},true);
+    document.addEventListener("click",event=>{if(isShareTarget(event.target))prepareSharePiP();},true);
     document.addEventListener("focusin",event=>{if(event.target.matches(".phi-web-search input[type='search'],form[action*='/phi'] input[type='search']"))floatPlayer();});
     document.addEventListener("input",event=>{if(event.target.matches(".phi-web-search input[type='search'],form[action*='/phi'] input[type='search']"))floatPlayer();});
     document.addEventListener("submit",event=>{const form=event.target;if(form.matches(".phi-web-search form,form[action*='/phi']")){event.preventDefault();openPhi(form);}},true);
     addEventListener("popstate",()=>{if(phiLayer){phiLayer.remove();phiLayer=null;restorePlayer();}});
-    window.InfinityChannelPiP={open:floatPlayer,restore:restorePlayer,system:requestSystemPiP};
+    window.InfinityChannelPiP={open:floatPlayer,restore:restorePlayer,system:requestSystemPiP,prepareShare:prepareSharePiP,enhanceMedia:enhanceMediaPermissions};
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind,{once:true});else bind();
 })();
