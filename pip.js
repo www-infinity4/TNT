@@ -38,6 +38,20 @@
     move.addEventListener("pointerdown",startDrag);
   }
 
+  function requestSystemPiP(){
+    try{
+      if(window.InfinityAndroid&&typeof window.InfinityAndroid.enterPictureInPicture==="function"){
+        return window.InfinityAndroid.enterPictureInPicture();
+      }
+      const video=document.querySelector("video");
+      if(video&&document.pictureInPictureEnabled&&!document.pictureInPictureElement&&typeof video.requestPictureInPicture==="function"){
+        video.requestPictureInPicture().catch(()=>{});
+        return true;
+      }
+    }catch(_){}
+    return false;
+  }
+
   function floatPlayer(){
     shell=findShell();if(!shell||shell.classList.contains("infinity-channel-pip"))return;
     installStyle();
@@ -98,12 +112,12 @@
 
   function bind(){
     installStyle();
-    document.addEventListener("click",event=>{if(event.target.closest("#shareButton,.share-button,[data-share],button[aria-label*='Share'],button[title*='Share']"))floatPlayer();},true);
+    document.addEventListener("click",event=>{if(event.target.closest("#shareButton,.share-button,[data-share],button[aria-label*='Share'],button[title*='Share']")){requestSystemPiP();floatPlayer();}},true);
     document.addEventListener("focusin",event=>{if(event.target.matches(".phi-web-search input[type='search'],form[action*='/phi'] input[type='search']"))floatPlayer();});
     document.addEventListener("input",event=>{if(event.target.matches(".phi-web-search input[type='search'],form[action*='/phi'] input[type='search']"))floatPlayer();});
     document.addEventListener("submit",event=>{const form=event.target;if(form.matches(".phi-web-search form,form[action*='/phi']")){event.preventDefault();openPhi(form);}},true);
     addEventListener("popstate",()=>{if(phiLayer){phiLayer.remove();phiLayer=null;restorePlayer();}});
-    window.InfinityChannelPiP={open:floatPlayer,restore:restorePlayer};
+    window.InfinityChannelPiP={open:floatPlayer,restore:restorePlayer,system:requestSystemPiP};
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind,{once:true});else bind();
 })();
