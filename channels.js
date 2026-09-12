@@ -12,6 +12,8 @@
     { name: "Cartoon Network", slug: "Cartoon-Network", url: "https://www-infinity4.github.io/Cartoon-Network/" },
     { name: "WGN", slug: "WGN", url: "https://www-infinity4.github.io/WGN/" },
     { name: "NBC", slug: "NBC", url: "https://www-infinity4.github.io/NBC/" },
+    { name: "FOX", slug: "FOX", url: "https://www-infinity4.github.io/FOX/" },
+    { name: "PBS", slug: "PBS", url: "https://www-infinity4.github.io/PBS/" },
     { name: "TNT", slug: "TNT", url: "https://www-infinity4.github.io/TNT/" },
     { name: "StarQuest", slug: "TV-Database", url: "https://www-infinity4.github.io/TV-Database/" }
   ];
