@@ -1,16 +1,16 @@
-// Playback policy: R-rated and age-restricted movie entries are excluded from this channel rotation.
-// TNT classic-movie channel.
-// The live rotation uses full-length YouTube Movies sources already proven usable in the Infinity channel family.
-// The Turner Vault below preserves the classic-TNT editorial identity and can be promoted into live rotation as official embeddable sources are connected.
+// TNT resilient classic-movie catalog.
+// Paid YouTube Movies/DRM listings are excluded because protected storefront IDs
+// can fail in third-party embeds. The Turner Vault remains the editorial target;
+// this live rotation uses ordinary full-length classic uploads until an approved
+// embeddable source for a Vault title is connected.
 window.HERMIT_CATALOG = [
-  { id:"TNT-001", title:"Masters of the Universe", year:1987, collection:"TNT Fantasy Night", runtimeSeconds:6346, videoId:"NTG2PESRurY", source:"YouTube Movies", cleared:true },
-  { id:"TNT-002", title:"UHF", year:1989, collection:"TNT Cult Comedy", runtimeSeconds:5833, videoId:"uAiyO8oEG4E", source:"YouTube Movies", cleared:true },
-  { id:"TNT-004", title:"The Karate Kid", year:1984, collection:"TNT Saturday Classic", runtimeSeconds:7616, videoId:"-slifyirmX0", source:"YouTube Movies", cleared:true },
-  { id:"TNT-005", title:"The Dark Crystal", year:1982, collection:"TNT Fantasy Vault", runtimeSeconds:5596, videoId:"4XMRm9igLGo", source:"YouTube Movies", cleared:true },
-  { id:"TNT-006", title:"Labyrinth", year:1986, collection:"TNT Fantasy Vault", runtimeSeconds:6072, videoId:"lL_Q0VtrTxU", source:"YouTube Movies", cleared:true },
-  { id:"TNT-007", title:"Bill & Ted's Excellent Adventure", year:1989, collection:"TNT Time Travel", runtimeSeconds:5390, videoId:"a72W8hP9QNE", source:"YouTube Movies", cleared:true },
-  { id:"TNT-008", title:"Bill & Ted's Bogus Journey", year:1991, collection:"TNT Time Travel", runtimeSeconds:5633, videoId:"2nwyLnPj6SI", source:"YouTube Movies", cleared:true },
-  { id:"TNT-010", title:"Waiting for Guffman", year:1996, collection:"TNT Comedy Vault", runtimeSeconds:5019, videoId:"9mdSMAmzo34", source:"YouTube Movies", cleared:true },
+  { id:"TNT-SAFE-001", title:"Things to Come", year:1936, collection:"TNT Future Worlds", runtimeSeconds:5820, videoId:"22cOGjikPG8", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true },
+  { id:"TNT-SAFE-002", title:"Phantom from Space", year:1953, collection:"TNT Science-Fiction Matinee", runtimeSeconds:4380, videoId:"SN8R3k73qj0", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true },
+  { id:"TNT-SAFE-003", title:"Missile to the Moon", year:1958, collection:"TNT Moon Mission", runtimeSeconds:4680, videoId:"PkSlAmx_wnk", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true },
+  { id:"TNT-SAFE-004", title:"The Monster of Piedras Blancas", year:1959, collection:"TNT Creature Feature", runtimeSeconds:4740, videoId:"SYKl4PtdPUA", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true },
+  { id:"TNT-SAFE-005", title:"The Amazing Transparent Man", year:1960, collection:"TNT Strange Science", runtimeSeconds:4680, videoId:"OvJS9WFW7Uc", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true },
+  { id:"TNT-SAFE-006", title:"The Phantom Planet", year:1961, collection:"TNT Atomic Sci-Fi", runtimeSeconds:4920, videoId:"MqaN40sbap4", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true },
+  { id:"TNT-SAFE-007", title:"Attack from Space", year:1965, collection:"TNT Space Adventure", runtimeSeconds:3000, videoId:"duc_edJQaxU", source:"Established classic full-length upload", networkChannel:"TNT", cleared:true }
 ].map(movie => ({ ...movie, posterUrl:"" }));
 
 window.TNT_VAULT = [
@@ -28,8 +28,9 @@ window.TNT_VAULT = [
 window.INFINITY_CHANNEL = {
   id:"TNT",
   name:"TNT",
-  era:"Turner classics + 1980s/1990s cable favorites",
+  era:"Turner classics + cable favorites",
   reset:"12:00 AM viewer local time",
+  sourcePolicy:"No YouTube Movies DRM IDs, age-restricted videos, trailers, promos or short clips.",
   schedulePolicy:"Daily deterministic lineup; a new rotation begins at local midnight."
 };
 
