@@ -5,6 +5,7 @@
     { name:"Hermit TV", slug:"Hermit-TV", url:"https://www-infinity4.github.io/Hermit-TV/", group:"TV", scheduled:true },
     { name:"Star Launcher", slug:"Star-Launcher", url:"https://www-infinity4.github.io/Star-Launcher/", group:"TV", scheduled:true },
     { name:"HBO", slug:"HBO", url:"https://www-infinity4.github.io/HBO/", group:"TV", scheduled:true },
+    { name:"BET", slug:"BET", url:"https://www-infinity4.github.io/BET/", group:"TV", liveLabel:"BET · Black entertainment, sports, music & culture" },
     { name:"Cinemax", slug:"Cinemax", url:"https://www-infinity4.github.io/Cinemax/", group:"TV", scheduled:true },
     { name:"Showtime", slug:"Showtime", url:"https://www-infinity4.github.io/Showtime/", group:"TV", scheduled:true },
     { name:"Starz", slug:"Starz", url:"https://www-infinity4.github.io/Starz/", group:"TV", scheduled:true },
