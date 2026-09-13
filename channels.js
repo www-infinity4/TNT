@@ -1,8 +1,9 @@
 (function(){
   "use strict";
-  const MUSIC_CHANNELS=[
+  const EXTRA_CHANNELS=[
     {name:"MTV",slug:"MTV",url:"https://www-infinity4.github.io/MTV/",group:"TV",liveLabel:"MTV · nonstop music videos · five-minute grid"},
-    {name:"VH1",slug:"VH1",url:"https://www-infinity4.github.io/VH1/",group:"TV",liveLabel:"VH1 · nonstop music videos · five-minute grid"}
+    {name:"VH1",slug:"VH1",url:"https://www-infinity4.github.io/VH1/",group:"TV",liveLabel:"VH1 · nonstop music videos · five-minute grid"},
+    {name:"ESPN",slug:"ESPN",url:"https://www-infinity4.github.io/ESPN/",group:"TV",liveLabel:"ESPN · full games with scheduled highlight mixes"}
   ];
   const CORE_URL="https://www-infinity4.github.io/TNT/channels-core.js?v=20260913-priority";
   function currentSlug(){return(location.pathname.split("/").filter(Boolean)[0]||"").toLowerCase()}
@@ -19,13 +20,13 @@
   }
   function addToArray(list){
     if(!Array.isArray(list))return;
-    MUSIC_CHANNELS.forEach(channel=>{if(!list.some(item=>item&&String(item.slug).toLowerCase()===channel.slug.toLowerCase()))list.push({...channel})});
+    EXTRA_CHANNELS.forEach(channel=>{if(!list.some(item=>item&&String(item.slug).toLowerCase()===channel.slug.toLowerCase()))list.push({...channel})});
   }
   function insertMenuLinks(){
     document.querySelectorAll(".channel-menu nav").forEach(nav=>{
       const syncDivider=Array.from(nav.children).find(node=>node.classList&&node.classList.contains("infinity-remote-heading")&&/sync/i.test(node.textContent||""));
       const firstSync=syncDivider||Array.from(nav.querySelectorAll("a")).find(a=>/\/Astraflix\/?$/i.test(new URL(a.href,location.href).pathname));
-      MUSIC_CHANNELS.forEach(channel=>{
+      EXTRA_CHANNELS.forEach(channel=>{
         if(Array.from(nav.querySelectorAll("a")).some(a=>new URL(a.href,location.href).pathname.toLowerCase()===new URL(channel.url).pathname.toLowerCase()))return;
         nav.insertBefore(anchor(channel,false),firstSync||null);
       });
@@ -34,7 +35,7 @@
   function insertDirectoryLinks(){
     document.querySelectorAll(".channel-directory nav").forEach(nav=>{
       const divider=nav.querySelector(".infinity-guide-divider");
-      MUSIC_CHANNELS.forEach(channel=>{
+      EXTRA_CHANNELS.forEach(channel=>{
         if(Array.from(nav.querySelectorAll("a")).some(a=>new URL(a.href,location.href).pathname.toLowerCase()===new URL(channel.url).pathname.toLowerCase()))return;
         nav.insertBefore(anchor(channel,true),divider||null);
       });
@@ -44,10 +45,10 @@
     addToArray(window.INFINITY_CHANNELS);
     if(window.InfinityChannelRemote){
       addToArray(window.InfinityChannelRemote.channels);
-      if(!window.InfinityChannelRemote.__musicWrapped&&typeof window.InfinityChannelRemote.refresh==="function"){
+      if(!window.InfinityChannelRemote.__extraWrapped&&typeof window.InfinityChannelRemote.refresh==="function"){
         const original=window.InfinityChannelRemote.refresh;
         window.InfinityChannelRemote.refresh=function(){const result=original.apply(this,arguments);setTimeout(register,0);return result};
-        window.InfinityChannelRemote.__musicWrapped=true;
+        window.InfinityChannelRemote.__extraWrapped=true;
       }
     }
     insertMenuLinks();insertDirectoryLinks();
