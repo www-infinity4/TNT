@@ -1,7 +1,7 @@
 (function(){
   "use strict";
   const STYLE_ID="infinity-channel-pip-style";
-  const CHANNELS_SRC="https://www-infinity4.github.io/TNT/channels.js?v=20260912c";
+  const CHANNELS_SRC="https://www-infinity4.github.io/TNT/channels.js?v=20260912sync2";
   let shell=null,placeholder=null,phiLayer=null,drag=null;
 
   function installStyle(){
@@ -17,7 +17,17 @@
       .infinity-phi-layer{position:fixed;inset:0;z-index:2147483600;background:#061127}
       .infinity-phi-layer iframe{width:100%;height:100%;border:0;background:#061127}
       .infinity-phi-close{position:fixed;top:10px;left:10px;z-index:2147483645;min-height:42px;padding:0 15px;border:1px solid rgba(255,255,255,.55);border-radius:999px;color:#fff;background:rgba(0,0,0,.82);font:800 14px system-ui}
-      @media(max-width:640px){.infinity-channel-pip{width:min(58vw,270px)!important;right:9px;bottom:9px}.infinity-pip-tools button{min-width:34px;min-height:34px;padding:0 8px}.infinity-phi-layer iframe{padding-top:0}}
+
+      /* Every channel gets one identical, dependable hamburger behavior. */
+      .channel-menu.infinity-normalized-menu{position:relative!important;display:block!important;z-index:2147483000!important;margin:0!important;font-family:system-ui,-apple-system,Segoe UI,sans-serif!important}
+      .channel-menu.infinity-normalized-menu>summary{list-style:none!important;cursor:pointer!important;min-width:48px!important;min-height:42px!important;padding:0 12px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;border:1px solid rgba(255,255,255,.28)!important;border-radius:999px!important;color:#fff!important;background:rgba(8,12,22,.92)!important;box-shadow:0 8px 26px rgba(0,0,0,.32)!important;font:800 13px/1 system-ui!important;user-select:none!important}
+      .channel-menu.infinity-normalized-menu>summary::-webkit-details-marker{display:none!important}
+      .channel-menu.infinity-normalized-menu>nav{position:absolute!important;right:0!important;left:auto!important;top:calc(100% + 8px)!important;width:min(88vw,340px)!important;max-height:72vh!important;overflow:auto!important;padding:9px!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:16px!important;background:rgba(5,8,16,.985)!important;box-shadow:0 18px 55px rgba(0,0,0,.58)!important;grid-template-columns:1fr!important;gap:5px!important;z-index:2147483001!important}
+      .channel-menu.infinity-normalized-menu:not([open])>nav{display:none!important}
+      .channel-menu.infinity-normalized-menu[open]>nav{display:grid!important}
+      .channel-menu.infinity-normalized-menu>nav a{display:block!important;padding:10px 11px!important;border-radius:10px!important;color:#fff!important;text-decoration:none!important;background:rgba(255,255,255,.055)!important;font:700 14px/1.25 system-ui!important;white-space:normal!important}
+      .channel-menu.infinity-normalized-menu>nav a[aria-current="page"]{outline:2px solid #f5c451!important;background:rgba(245,196,81,.14)!important}
+      @media(max-width:640px){.infinity-channel-pip{width:min(58vw,270px)!important;right:9px;bottom:9px}.infinity-pip-tools button{min-width:34px;min-height:34px;padding:0 8px}.infinity-phi-layer iframe{padding-top:0}.channel-menu.infinity-normalized-menu>summary .menu-label{display:none!important}.channel-menu.infinity-normalized-menu>nav{width:min(92vw,330px)!important}}
     `;
     document.head.appendChild(style);
   }
@@ -28,6 +38,53 @@
     script.src=CHANNELS_SRC;
     script.dataset.infinityChannels="1";
     document.head.appendChild(script);
+  }
+
+  function escapeHTML(value){
+    return String(value==null?"":value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+  }
+
+  function currentSlug(){
+    return location.pathname.split("/").filter(Boolean)[0]||"";
+  }
+
+  function normalizeRemote(){
+    let menu=document.querySelector(".channel-menu");
+    if(!menu){
+      if(window.InfinityChannelRemote&&typeof window.InfinityChannelRemote.refresh==="function"){
+        try{window.InfinityChannelRemote.refresh();}catch(_){}
+        menu=document.querySelector(".channel-menu");
+      }
+      if(!menu)return false;
+    }
+    menu.classList.add("infinity-normalized-menu");
+
+    let summary=menu.querySelector(":scope > summary");
+    if(!summary){summary=document.createElement("summary");menu.prepend(summary);}
+    summary.setAttribute("aria-label","Open channel menu");
+    summary.innerHTML='<span aria-hidden="true">☰</span><span class="menu-label">Channels</span>';
+
+    let nav=menu.querySelector(":scope > nav");
+    if(!nav){nav=document.createElement("nav");menu.appendChild(nav);}
+    nav.setAttribute("aria-label","Switch channels");
+
+    const channels=Array.isArray(window.INFINITY_CHANNELS)?window.INFINITY_CHANNELS:[];
+    if(channels.length){
+      const active=currentSlug().toLowerCase();
+      nav.innerHTML=channels.map(channel=>{
+        const current=String(channel.slug||"").toLowerCase()===active;
+        return `<a${current?' aria-current="page"':''} href="${escapeHTML(channel.url)}">${escapeHTML(channel.name)}</a>`;
+      }).join("");
+    }
+
+    if(menu.dataset.infinityNormalizedBound!=="1"){
+      menu.dataset.infinityNormalizedBound="1";
+      nav.addEventListener("click",event=>{if(event.target.closest("a"))menu.removeAttribute("open");});
+      document.addEventListener("pointerdown",event=>{
+        if(menu.open&&!menu.contains(event.target))menu.removeAttribute("open");
+      });
+    }
+    return true;
   }
 
   function enhanceMediaPermissions(root=document){
@@ -53,6 +110,7 @@
           else if(node.querySelectorAll)enhanceMediaPermissions(node);
         });
       }
+      normalizeRemote();
     });
     observer.observe(document.documentElement,{childList:true,subtree:true});
   }
@@ -91,11 +149,7 @@
     return false;
   }
 
-  function prepareSharePiP(){
-    enhanceMediaPermissions();
-    floatPlayer();
-    requestSystemPiP();
-  }
+  function prepareSharePiP(){enhanceMediaPermissions();floatPlayer();requestSystemPiP();}
 
   function floatPlayer(){
     shell=findShell();if(!shell||shell.classList.contains("infinity-channel-pip"))return;
@@ -137,9 +191,7 @@
     shell.style.top=Math.min(maxY,Math.max(0,event.clientY-drag.dy))+"px";
     shell.style.right="auto";shell.style.bottom="auto";
   }
-  function endDrag(event){
-    event.currentTarget.removeEventListener("pointermove",moveDrag);drag=null;
-  }
+  function endDrag(event){event.currentTarget.removeEventListener("pointermove",moveDrag);drag=null;}
 
   function openPhi(form){
     const action=form.action||"https://www-infinity4.github.io/C13b0/phi";
@@ -155,19 +207,22 @@
     history.pushState({infinityPhi:true},"",location.href);
   }
 
-  function isShareTarget(target){return !!target.closest("#shareButton,.share-button,[data-share],button[aria-label*='Share'],button[title*='Share'],a[aria-label*='Share'],a[title*='Share']");}
+  function isShareTarget(target){return!!target.closest("#shareButton,.share-button,[data-share],button[aria-label*='Share'],button[title*='Share'],a[aria-label*='Share'],a[title*='Share']");}
 
   function bind(){
     installStyle();
     ensureRemote();
     watchPlayers();
+    normalizeRemote();
+    setTimeout(normalizeRemote,250);
+    setTimeout(normalizeRemote,1000);
     document.addEventListener("pointerdown",event=>{if(isShareTarget(event.target))prepareSharePiP();},true);
     document.addEventListener("click",event=>{if(isShareTarget(event.target))prepareSharePiP();},true);
     document.addEventListener("focusin",event=>{if(event.target.matches(".phi-web-search input[type='search'],form[action*='/phi'] input[type='search']"))floatPlayer();});
     document.addEventListener("input",event=>{if(event.target.matches(".phi-web-search input[type='search'],form[action*='/phi'] input[type='search']"))floatPlayer();});
     document.addEventListener("submit",event=>{const form=event.target;if(form.matches(".phi-web-search form,form[action*='/phi']")){event.preventDefault();openPhi(form);}},true);
     addEventListener("popstate",()=>{if(phiLayer){phiLayer.remove();phiLayer=null;restorePlayer();}});
-    window.InfinityChannelPiP={open:floatPlayer,restore:restorePlayer,system:requestSystemPiP,prepareShare:prepareSharePiP,enhanceMedia:enhanceMediaPermissions};
+    window.InfinityChannelPiP={open:floatPlayer,restore:restorePlayer,system:requestSystemPiP,prepareShare:prepareSharePiP,enhanceMedia:enhanceMediaPermissions,normalizeRemote};
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind,{once:true});else bind();
 })();
