@@ -10,6 +10,7 @@
     { name:"Starz", slug:"Starz", url:"https://www-infinity4.github.io/Starz/", group:"TV", scheduled:true },
     { name:"Encore", slug:"Encore", url:"https://www-infinity4.github.io/Encore/", group:"TV", scheduled:true },
     { name:"Cartoon Network", slug:"Cartoon-Network", url:"https://www-infinity4.github.io/Cartoon-Network/", group:"TV", scheduled:true },
+    { name:"Nickelodeon", slug:"Nickelodeon", url:"https://www-infinity4.github.io/Nickelodeon/", group:"TV", scheduled:true },
     { name:"WGN", slug:"WGN", url:"https://www-infinity4.github.io/WGN/", group:"TV", scheduled:true },
     { name:"NBC", slug:"NBC", url:"https://www-infinity4.github.io/NBC/", group:"TV", scheduled:true },
     { name:"FOX", slug:"FOX", url:"https://www-infinity4.github.io/FOX/", group:"TV", scheduled:true },
@@ -28,7 +29,7 @@
 
   const STYLE_ID = "infinity-shared-network-style-v3";
   const SOURCE_CACHE = new Map();
-  const BLOCKED_GUIDE_TITLES = /galaxy of terror|chopping mall|fatal combat|hologram man|breakfast of champions|eulogy|blitz|the fanatic|the presence|monsters of man|wanted|zodiac|payback|\\bava\\b|assault on precinct 13|the fog|\\brage\\b|a good marriage|return of the living dead|michael collins|deathtrap/i;
+  const BLOCKED_GUIDE_TITLES = /galaxy of terror|chopping mall|fatal combat|hologram man|breakfast of champions|eulogy|blitz|the fanatic|the presence|monsters of man|wanted|zodiac|payback|\bava\b|assault on precinct 13|the fog|\brage\b|a good marriage|return of the living dead|michael collins|deathtrap/i;
   let guideObserver = null;
   let mutationObserver = null;
 
