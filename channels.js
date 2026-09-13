@@ -7,16 +7,38 @@
   ];
   const CORE_URL="https://www-infinity4.github.io/TNT/channels-core.js?v=20260913-priority";
   const CONTROL_URL="https://www-infinity4.github.io/Control-Phi/control-phi.js?v=20260913-news2";
+  const CONTROL_FALLBACK_URL="https://www-infinity4.github.io/News-Phi/control-phi.js?v=20260913-news2";
+
+  function loadControlFallback(){
+    if(window.ControlPhi&&window.ControlPhi.version)return;
+    if(document.querySelector('script[data-infinity-control-phi-fallback]'))return;
+    const fallback=document.createElement("script");
+    fallback.src=CONTROL_FALLBACK_URL;
+    fallback.async=false;
+    fallback.dataset.infinityControlPhiFallback="1";
+    fallback.onerror=()=>console.error("News Phi fallback bridge failed to load");
+    (document.head||document.documentElement).appendChild(fallback);
+  }
 
   function ensureControlPhi(){
     if(window.ControlPhi&&window.ControlPhi.version)return;
-    if(document.querySelector('script[data-infinity-control-phi],script[src*="/Control-Phi/control-phi.js"]'))return;
+    const existing=document.querySelector('script[src*="/Control-Phi/control-phi.js"]');
+    if(existing){
+      if(existing.dataset.infinityControlWatch!=="1"){
+        existing.dataset.infinityControlWatch="1";
+        existing.addEventListener("error",loadControlFallback,{once:true});
+        setTimeout(()=>{if(!window.ControlPhi)loadControlFallback()},1800);
+      }
+      return;
+    }
+    if(document.querySelector('script[data-infinity-control-phi]'))return;
     const bridge=document.createElement("script");
     bridge.src=CONTROL_URL;
     bridge.async=false;
     bridge.dataset.infinityControlPhi="1";
-    bridge.onerror=()=>console.error("Control Phi News bridge failed to load");
+    bridge.onerror=loadControlFallback;
     (document.head||document.documentElement).appendChild(bridge);
+    setTimeout(()=>{if(!window.ControlPhi)loadControlFallback()},1800);
   }
 
   function currentSlug(){return(location.pathname.split("/").filter(Boolean)[0]||"").toLowerCase()}
