@@ -57,31 +57,11 @@
       }
       if(!menu)return false;
     }
-    menu.classList.add("infinity-normalized-menu");
 
-    let summary=menu.querySelector(":scope > summary");
-    if(!summary){summary=document.createElement("summary");menu.prepend(summary);}
-    summary.setAttribute("aria-label","Open channel menu");
-    const summaryHTML='<span aria-hidden="true">☰</span><span class="menu-label">Channels</span>';
-    if(summary.innerHTML!==summaryHTML)summary.innerHTML=summaryHTML;
-
-    let nav=menu.querySelector(":scope > nav");
-    if(!nav){nav=document.createElement("nav");menu.appendChild(nav);}
-    nav.setAttribute("aria-label","Switch channels");
-
-    const channels=Array.isArray(window.INFINITY_CHANNELS)?window.INFINITY_CHANNELS:[];
-    if(channels.length){
-      const active=currentSlug().toLowerCase();
-      const navHTML=channels.map(channel=>{
-        const current=String(channel.slug||"").toLowerCase()===active;
-        return `<a${current?' aria-current="page"':''} href="${escapeHTML(channel.url)}">${escapeHTML(channel.name)}</a>`;
-      }).join("");
-      if(nav.innerHTML!==navHTML)nav.innerHTML=navHTML;
-    }
-
-    if(menu.dataset.infinityNormalizedBound!=="1"){
-      menu.dataset.infinityNormalizedBound="1";
-      nav.addEventListener("click",event=>{if(event.target.closest("a"))menu.removeAttribute("open");});
+    const nav=menu.querySelector(":scope > nav");
+    if(menu.dataset.infinityCloseBound!=="1"){
+      menu.dataset.infinityCloseBound="1";
+      if(nav)nav.addEventListener("click",event=>{if(event.target.closest("a"))menu.removeAttribute("open");});
       document.addEventListener("pointerdown",event=>{
         if(menu.open&&!menu.contains(event.target))menu.removeAttribute("open");
       });
