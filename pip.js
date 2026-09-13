@@ -1,7 +1,7 @@
 (function(){
   "use strict";
   const STYLE_ID="infinity-channel-pip-style";
-  const CHANNELS_SRC="https://www-infinity4.github.io/TNT/channels.js?v=20260912sync2";
+  const CHANNELS_SRC="https://www-infinity4.github.io/TNT/channels.js?v=20260913-freeze2";
   let shell=null,placeholder=null,phiLayer=null,drag=null;
 
   function installStyle(){
@@ -33,7 +33,7 @@
   }
 
   function ensureRemote(){
-    if(window.InfinityChannelRemote||document.querySelector('script[data-infinity-channels]'))return;
+    if(window.InfinityChannelRemote||document.querySelector('script[data-infinity-channels],script[src*="/TNT/channels.js"]'))return;
     const script=document.createElement("script");
     script.src=CHANNELS_SRC;
     script.dataset.infinityChannels="1";
