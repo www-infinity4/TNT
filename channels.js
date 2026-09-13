@@ -4,7 +4,7 @@
     {name:"MTV",slug:"MTV",url:"https://www-infinity4.github.io/MTV/",group:"TV",liveLabel:"MTV · nonstop music videos · five-minute grid"},
     {name:"VH1",slug:"VH1",url:"https://www-infinity4.github.io/VH1/",group:"TV",liveLabel:"VH1 · nonstop music videos · five-minute grid"}
   ];
-  const CORE_URL="https://www-infinity4.github.io/TNT/channels-core.js?v=20260913-all-channels2";
+  const CORE_URL="https://www-infinity4.github.io/TNT/channels-core.js?v=20260913-priority";
   function currentSlug(){return(location.pathname.split("/").filter(Boolean)[0]||"").toLowerCase()}
   function anchor(channel,directory){
     const a=document.createElement("a");
