@@ -11,6 +11,7 @@
     { name:"Encore", slug:"Encore", url:"https://www-infinity4.github.io/Encore/", group:"TV", scheduled:true },
     { name:"Cartoon Network", slug:"Cartoon-Network", url:"https://www-infinity4.github.io/Cartoon-Network/", group:"TV", scheduled:true },
     { name:"Nickelodeon", slug:"Nickelodeon", url:"https://www-infinity4.github.io/Nickelodeon/", group:"TV", scheduled:true },
+    { name:"Ozzy TV", slug:"Ozzy-TV", url:"https://www-infinity4.github.io/Ozzy-TV/", group:"TV", scheduled:true },
     { name:"WGN", slug:"WGN", url:"https://www-infinity4.github.io/WGN/", group:"TV", scheduled:true },
     { name:"NBC", slug:"NBC", url:"https://www-infinity4.github.io/NBC/", group:"TV", scheduled:true },
     { name:"FOX", slug:"FOX", url:"https://www-infinity4.github.io/FOX/", group:"TV", scheduled:true },
