@@ -97,7 +97,15 @@
     return items.slice(0, 3);
   }
 
+  let renderedNextBlockKey = "";
+
   function renderNext(currentBlock) {
+
+    const nextBlockKey = currentBlock ? String(currentBlock.id || currentBlock.startsAtMs || "") + ":" + String((currentBlock.movie && currentBlock.movie.videoId) || (currentBlock.program && currentBlock.program.videoId) || "") : "";
+
+    if (nextBlockKey && nextBlockKey === renderedNextBlockKey) return;
+
+    renderedNextBlockKey = nextBlockKey;
     const items = nextItems(currentBlock);
     els.next.innerHTML = items.map(item => {
       const art = artForMovie(item.movie).replace(/"/g, "%22");
