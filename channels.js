@@ -50,6 +50,9 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
+      /* Existing channel menus retain their native buttons and visual identity. */
+      .channel-menu>nav{right:0!important;left:auto!important;width:min(270px,calc(100vw - 28px))!important;max-width:calc(100vw - 28px)!important;max-height:calc(100dvh - 92px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;box-sizing:border-box!important}
+      .channel-menu>nav a{white-space:normal!important}
       /* IMPORTANT: existing .channel-menu elements keep each site's native CSS. */
       .infinity-auto-menu{position:fixed;right:10px;top:10px;z-index:2147483000;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
       .infinity-auto-menu>summary{list-style:none;cursor:pointer;min-width:48px;min-height:44px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.28);border-radius:999px;color:#fff;background:rgba(8,12,22,.92);box-shadow:0 8px 26px rgba(0,0,0,.35);font-weight:800}
