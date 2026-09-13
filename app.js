@@ -32,17 +32,14 @@
     return mode === "live" ? Date.now() : timeShiftBaseMs + (Date.now() - timeShiftStartedMs);
   }
 
-  function availableCatalog() {
-    const available = catalog.filter(movie => !failedMovieVideoIds.has(movie.videoId));
-    return available.length ? available : catalog;
-  }
-
   function ensureSchedule(nowMs) {
     const key = engine.dateKey(nowMs);
     if (key === scheduleKey && schedule.length) return;
     scheduleKey = key;
     try {
-      schedule = engine.createDaySchedule(nowMs, availableCatalog());
+      // The daily schedule never changes because one viewer hit a YouTube error.
+      // That keeps every viewer on the same movie and the same source timestamp.
+      schedule = engine.createDaySchedule(nowMs, catalog, commercials);
       renderGuide();
     } catch (_) {
       schedule = [];
@@ -87,11 +84,22 @@
     els.vault.innerHTML = vault.map((title, index) => `<article class="vault-card"><span>${String(index + 1).padStart(2,"0")}</span><strong>${title}</strong></article>`).join("");
   }
 
-  function renderNext(currentBlock) {
-    if (!schedule.length || !currentBlock) return;
+  function nextItems(currentBlock) {
+    if (!schedule.length || !currentBlock) return [];
     const currentIndex = schedule.findIndex(item => item.id === currentBlock.id);
-    els.next.innerHTML = [1,2,3].map(step => {
-      const item = schedule[(currentIndex + step + schedule.length) % schedule.length];
+    const items = currentIndex >= 0 ? schedule.slice(currentIndex + 1) : [];
+    if (items.length < 3) {
+      try {
+        const nextDay = engine.createDaySchedule(currentBlock.endsAtMs + 1000, catalog, commercials);
+        items.push(...nextDay);
+      } catch (_) {}
+    }
+    return items.slice(0, 3);
+  }
+
+  function renderNext(currentBlock) {
+    const items = nextItems(currentBlock);
+    els.next.innerHTML = items.map(item => {
       const art = artForMovie(item.movie).replace(/"/g, "%22");
       return `<article class="next-card" style="--card-hue:${movieHue(item.movie)};--card-art:url('${art}')"><time>${formatStationTime(item.startsAtMs)}</time><div><h3>${item.movie.title}</h3><p>${item.movie.year} · ${item.movie.collection}</p></div></article>`;
     }).join("");
@@ -110,6 +118,8 @@
       showMessage("COMMERCIAL BREAK", state.segment.title, `${formatDuration(state.movieReturnsIn)} until the movie returns`);
     } else if (state.segment.kind === "station") {
       showMessage("TNT", state.segment.title, `${formatDuration(state.segmentRemaining)} until the next movie`);
+    } else if (failedMovieVideoIds.has(state.segment.videoId)) {
+      showMessage("SOURCE UNAVAILABLE", state.block.movie.title, `The schedule stays synchronized. Next movie starts at ${formatStationTime(state.block.endsAtMs)}.`);
     } else {
       showMessage("SCHEDULED NOW", state.block.movie.title, "This source is being refreshed.");
     }
@@ -117,8 +127,9 @@
 
   function loadMedia(state) {
     if (!entered || !state) return;
-    const playable = state.segment.videoId && state.segment.cleared;
-    const mediaKey = `${state.block.id}:${state.segment.stationStart}:${state.segment.videoId}`;
+    const locallyFailed = state.segment.videoId && failedMovieVideoIds.has(state.segment.videoId);
+    const playable = state.segment.videoId && state.segment.cleared && !locallyFailed;
+    const mediaKey = `${state.block.id}:${state.segment.stationStart}:${state.segment.videoId}:${locallyFailed?"failed":"ok"}`;
     if (!playable) {
       showStationCard(state);
       if (playerReady && loadedKey !== mediaKey) player.stopVideo();
@@ -150,7 +161,7 @@
     setProgramArt(state.block.movie);
     els.programTime.textContent = `${formatStationTime(state.block.startsAtMs)}–${formatStationTime(state.block.endsAtMs)}`;
     els.position.textContent = mode === "live" ? "Synced with the live TNT schedule" : `${formatDuration(state.blockElapsed)} from start`;
-    els.remaining.textContent = `${formatDuration(state.blockRemaining)} remaining in slot`;
+    els.remaining.textContent = `${formatDuration(state.blockRemaining)} until next scheduled movie`;
     els.progress.style.width = `${Math.min(100, (state.blockElapsed / state.block.blockSeconds) * 100)}%`;
     document.querySelectorAll(".guide-row").forEach(row => row.classList.toggle("current", row.dataset.id === state.block.id));
     renderNext(state.block);
@@ -196,6 +207,7 @@
   function joinLive() {
     mode = "live";
     loadedKey = "";
+    scheduleKey = "";
     tick();
   }
 
@@ -237,8 +249,9 @@
           if (loadedMovieVideoId) failedMovieVideoIds.add(loadedMovieVideoId);
           loadedMovieVideoId = "";
           loadedKey = "";
-          scheduleKey = "";
-          setTimeout(tick, 300);
+          // Do not rebuild or reshuffle the schedule from a client-side error.
+          // Hold the slot and move everyone to the next movie at the same time.
+          setTimeout(tick, 150);
         }
       }
     });
