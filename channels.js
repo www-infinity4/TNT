@@ -28,6 +28,7 @@
 
   const STYLE_ID = "infinity-shared-network-style-v3";
   const SOURCE_CACHE = new Map();
+  const BLOCKED_GUIDE_TITLES = /galaxy of terror|chopping mall|fatal combat|hologram man|breakfast of champions|eulogy|blitz|the fanatic|the presence|monsters of man|wanted|zodiac|payback|\\bava\\b|assault on precinct 13|the fog|\\brage\\b|a good marriage|return of the living dead|michael collins|deathtrap/i;
   let guideObserver = null;
   let mutationObserver = null;
 
@@ -277,6 +278,7 @@
   function storedPresence(slug) {
     const data = safeJSON(`infinity_live_${slug}`, null);
     if (!data || !data.title || !data.updatedAt || Date.now() - data.updatedAt > 5 * 60 * 1000) return null;
+    if (BLOCKED_GUIDE_TITLES.test(String(data.title))) return null;
     return data;
   }
 
