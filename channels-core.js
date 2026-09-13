@@ -257,6 +257,7 @@
 
   function attachWalletBeside(button) {
     if (!button || button.parentElement && button.parentElement.querySelector(":scope > .infinity-wallet-wrap")) return;
+    if (document.querySelector(".infinity-wallet-button")) { refreshWallet(); return; }
     button.insertAdjacentElement("afterend", makeWallet());
     refreshWallet();
   }
