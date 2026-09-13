@@ -366,7 +366,18 @@
     publishCurrent();
     watchGuide(section);
     if (!mutationObserver) {
-      mutationObserver = new MutationObserver(() => { ensureActions(); publishCurrent(); });
+      let actionsQueued = false;
+      mutationObserver = new MutationObserver(records => {
+        const needsActions = records.some(record => Array.from(record.addedNodes).some(node =>
+          node.nodeType === 1 && (
+            node.matches && node.matches("#shareButton,.share-button,.infinity-shared-share,.channel-menu") ||
+            node.querySelector && node.querySelector("#shareButton,.share-button,.infinity-shared-share,.channel-menu")
+          )
+        ));
+        if (!needsActions || actionsQueued) return;
+        actionsQueued = true;
+        requestAnimationFrame(() => { actionsQueued = false; ensureMenu(); ensureActions(); });
+      });
       mutationObserver.observe(document.body, {childList:true,subtree:true});
     }
   }
