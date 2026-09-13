@@ -2,8 +2,12 @@
   "use strict";
 
   const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  // Kept for backwards compatibility with older channel code. Individual movie
+  // blocks are now sized from the real movie runtime instead of being forced to 2h.
   const BLOCK_SECONDS = 7200;
   const BREAK_AFTER_CONTENT_SECONDS = [1500, 3000, 4500];
+  const SPOTS_PER_BREAK = 3;
+  const DEFAULT_SPOT_SECONDS = 60;
 
   function stationParts(date) {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -52,58 +56,117 @@
     return copy;
   }
 
-  function createDaySchedule(nowMs, catalog) {
+  function movieRuntimeSeconds(movie) {
+    return Math.max(60, Math.floor(Number(movie && movie.runtimeSeconds) || 6000));
+  }
+
+  function breakDurationSeconds(commercials, breakIndex) {
+    if (!Array.isArray(commercials) || !commercials.length) return SPOTS_PER_BREAK * DEFAULT_SPOT_SECONDS;
+    let seconds = 0;
+    for (let spot = 0; spot < SPOTS_PER_BREAK; spot++) {
+      const ad = commercials[(breakIndex * SPOTS_PER_BREAK + spot) % commercials.length] || {};
+      seconds += Math.max(1, Math.floor(Number(ad.durationSeconds) || DEFAULT_SPOT_SECONDS));
+    }
+    return seconds;
+  }
+
+  function stationDurationSeconds(movie, commercials) {
+    const runtime = movieRuntimeSeconds(movie);
+    const breaks = BREAK_AFTER_CONTENT_SECONDS.filter(n => n < runtime);
+    return runtime + breaks.reduce((sum, _boundary, index) => sum + breakDurationSeconds(commercials, index), 0);
+  }
+
+  function nextLocalMidnight(midnightMs) {
+    // 30 hours after local midnight is safely inside the following local day,
+    // including 23/25-hour daylight-saving transition days.
+    const p = stationParts(new Date(midnightMs + 30 * 60 * 60 * 1000));
+    return zonedToUtc(p.year, p.month, p.day);
+  }
+
+  function createDaySchedule(nowMs, catalog, commercials) {
     const p = stationParts(new Date(nowMs));
     const midnightMs = zonedToUtc(p.year, p.month, p.day);
-    const eligible = catalog.filter(movie => movie.cleared && movie.videoId);
-    if (!eligible.length) throw new Error("No playable TNT movies are configured.");
+    const dayEndMs = nextLocalMidnight(midnightMs);
+    const eligible = catalog.filter(movie => movie && movie.cleared && movie.videoId);
+    if (!eligible.length) throw new Error("No playable movies are configured.");
+
     const todayKey = dateKey(nowMs);
-    let shuffled = seededShuffle(eligible, `TNT-${todayKey}`);
+    let shuffled = seededShuffle(eligible, todayKey);
     const previousKey = dateKey(midnightMs - 1000);
-    const previous = seededShuffle(eligible, `TNT-${previousKey}`);
-    if (shuffled.length > 1 && (shuffled[0] === previous[0] || shuffled.map(item => item.videoId).join("|") === previous.map(item => item.videoId).join("|"))) {
-      shuffled = [...shuffled.slice(1), shuffled[0]];
+    const previous = seededShuffle(eligible, previousKey);
+    if (shuffled.length > 1 && (shuffled[0] === previous[0] || shuffled.map(item => item.videoId || item.title).join("|") === previous.map(item => item.videoId || item.title).join("|"))) {
+      const firstDifferent = shuffled.findIndex(item => (item.videoId || item.title) !== (previous[0].videoId || previous[0].title));
+      const offset = firstDifferent > 0 ? firstDifferent : 1;
+      shuffled = [...shuffled.slice(offset), ...shuffled.slice(0, offset)];
     }
-    const featured = Array.from({length:12}, (_, index) => shuffled[index % shuffled.length]);
-    return featured.map((movie, index) => ({
-      id: `${todayKey}-${String(index).padStart(2,"0")}`,
-      movie,
-      startsAtMs: midnightMs + index * BLOCK_SECONDS * 1000,
-      endsAtMs: midnightMs + (index + 1) * BLOCK_SECONDS * 1000,
-      blockSeconds: BLOCK_SECONDS
-    }));
+
+    const schedule = [];
+    let cursorMs = midnightMs;
+    let index = 0;
+    while (cursorMs < dayEndMs && index < 64) {
+      const movie = shuffled[index % shuffled.length];
+      const fullSeconds = stationDurationSeconds(movie, commercials);
+      const remainingDaySeconds = Math.max(1, Math.floor((dayEndMs - cursorMs) / 1000));
+      const blockSeconds = Math.min(fullSeconds, remainingDaySeconds);
+      const endsAtMs = cursorMs + blockSeconds * 1000;
+      schedule.push({
+        id: `${todayKey}-${String(index).padStart(2,"0")}`,
+        movie,
+        startsAtMs: cursorMs,
+        endsAtMs,
+        blockSeconds,
+        fullStationSeconds: fullSeconds
+      });
+      cursorMs = endsAtMs;
+      index += 1;
+    }
+    return schedule;
   }
 
   function createSegments(block, commercials) {
-    const runtime = Math.min(block.movie.runtimeSeconds || 6000, BLOCK_SECONDS - 540);
+    const runtime = movieRuntimeSeconds(block.movie);
     const boundaries = [0, ...BREAK_AFTER_CONTENT_SECONDS.filter(n => n < runtime), runtime];
+    const limit = Math.max(1, Math.floor(Number(block.blockSeconds) || stationDurationSeconds(block.movie, commercials)));
+    const ads = Array.isArray(commercials) ? commercials : [];
     const segments = [];
     let stationOffset = 0;
     let adIndex = 0;
+
+    function pushSegment(segment, requestedDuration) {
+      const remaining = limit - stationOffset;
+      if (remaining <= 0) return false;
+      const duration = Math.min(Math.max(1, Math.floor(requestedDuration)), remaining);
+      segments.push({ ...segment, stationStart: stationOffset, duration });
+      stationOffset += duration;
+      return duration === requestedDuration;
+    }
+
+    outer:
     for (let i = 0; i < boundaries.length - 1; i++) {
       const sourceStart = boundaries[i];
-      const duration = boundaries[i + 1] - sourceStart;
-      segments.push({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart, stationStart:stationOffset, duration});
-      stationOffset += duration;
+      const requestedMovieDuration = boundaries[i + 1] - sourceStart;
+      const completeMovieChunk = pushSegment({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart}, requestedMovieDuration);
+      if (!completeMovieChunk || stationOffset >= limit) break;
+
       if (i < boundaries.length - 2) {
-        for (let spot = 0; spot < 3; spot++) {
-          const ad = commercials[adIndex++ % commercials.length];
-          const duration = ad.durationSeconds || 60;
-          segments.push({kind:"commercial", title:ad.title, videoId:ad.videoId, cleared:ad.cleared, sourceStart:0, stationStart:stationOffset, duration});
-          stationOffset += duration;
+        for (let spot = 0; spot < SPOTS_PER_BREAK; spot++) {
+          const ad = ads.length ? (ads[adIndex++ % ads.length] || {}) : {title:"Station break", durationSeconds:DEFAULT_SPOT_SECONDS, videoId:"", cleared:false};
+          const completeAd = pushSegment({kind:"commercial", title:ad.title || "Station break", videoId:ad.videoId || "", cleared:!!ad.cleared, sourceStart:0}, Math.max(1, Math.floor(Number(ad.durationSeconds) || DEFAULT_SPOT_SECONDS)));
+          if (!completeAd || stationOffset >= limit) break outer;
         }
       }
     }
-    if (stationOffset < BLOCK_SECONDS) {
-      const duration = BLOCK_SECONDS - stationOffset;
-      segments.push({kind:"movie", title:block.movie.title, videoId:block.movie.videoId, cleared:block.movie.cleared, sourceStart:0, stationStart:stationOffset, duration});
-      stationOffset += duration;
+
+    // Never restart a finished movie merely to fill a timetable slot. If an
+    // unusual ad-duration mismatch leaves a few seconds, hold a station card.
+    if (stationOffset < limit) {
+      pushSegment({kind:"station", title:"Next movie starts shortly", videoId:"", cleared:false, sourceStart:0}, limit - stationOffset);
     }
     return segments;
   }
 
   function resolve(nowMs, schedule, commercials) {
-    const block = schedule.find(item => nowMs >= item.startsAtMs && nowMs < item.endsAtMs) || schedule[0];
+    const block = schedule.find(item => nowMs >= item.startsAtMs && nowMs < item.endsAtMs) || schedule[schedule.length - 1] || schedule[0];
     const blockElapsed = Math.max(0, Math.floor((nowMs - block.startsAtMs) / 1000));
     const segments = createSegments(block, commercials);
     const segment = segments.find(item => blockElapsed >= item.stationStart && blockElapsed < item.stationStart + item.duration) || segments[segments.length - 1];
@@ -120,5 +183,5 @@
     };
   }
 
-  root.HermitEngine = { TIME_ZONE, BLOCK_SECONDS, stationParts, zonedToUtc, dateKey, createDaySchedule, createSegments, resolve };
+  root.HermitEngine = { TIME_ZONE, BLOCK_SECONDS, stationParts, zonedToUtc, dateKey, stationDurationSeconds, createDaySchedule, createSegments, resolve };
 })(window);
