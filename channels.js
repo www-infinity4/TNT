@@ -6,6 +6,19 @@
     {name:"ESPN",slug:"ESPN",url:"https://www-infinity4.github.io/ESPN/",group:"TV",liveLabel:"ESPN · full games with scheduled highlight mixes"}
   ];
   const CORE_URL="https://www-infinity4.github.io/TNT/channels-core.js?v=20260913-priority";
+  const CONTROL_URL="https://www-infinity4.github.io/Control-Phi/control-phi.js?v=20260913-news2";
+
+  function ensureControlPhi(){
+    if(window.ControlPhi&&window.ControlPhi.version)return;
+    if(document.querySelector('script[data-infinity-control-phi],script[src*="/Control-Phi/control-phi.js"]'))return;
+    const bridge=document.createElement("script");
+    bridge.src=CONTROL_URL;
+    bridge.async=false;
+    bridge.dataset.infinityControlPhi="1";
+    bridge.onerror=()=>console.error("Control Phi News bridge failed to load");
+    (document.head||document.documentElement).appendChild(bridge);
+  }
+
   function currentSlug(){return(location.pathname.split("/").filter(Boolean)[0]||"").toLowerCase()}
   function anchor(channel,directory){
     const a=document.createElement("a");
@@ -42,6 +55,7 @@
     });
   }
   function register(){
+    ensureControlPhi();
     addToArray(window.INFINITY_CHANNELS);
     if(window.InfinityChannelRemote){
       addToArray(window.InfinityChannelRemote.channels);
@@ -58,6 +72,8 @@
     else setTimeout(register,0);
     window.addEventListener("pageshow",register);
   }
+
+  ensureControlPhi();
   const script=document.createElement("script");
   script.src=CORE_URL;
   script.async=false;
