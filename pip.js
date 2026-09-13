@@ -62,7 +62,8 @@
     let summary=menu.querySelector(":scope > summary");
     if(!summary){summary=document.createElement("summary");menu.prepend(summary);}
     summary.setAttribute("aria-label","Open channel menu");
-    summary.innerHTML='<span aria-hidden="true">☰</span><span class="menu-label">Channels</span>';
+    const summaryHTML='<span aria-hidden="true">☰</span><span class="menu-label">Channels</span>';
+    if(summary.innerHTML!==summaryHTML)summary.innerHTML=summaryHTML;
 
     let nav=menu.querySelector(":scope > nav");
     if(!nav){nav=document.createElement("nav");menu.appendChild(nav);}
@@ -71,10 +72,11 @@
     const channels=Array.isArray(window.INFINITY_CHANNELS)?window.INFINITY_CHANNELS:[];
     if(channels.length){
       const active=currentSlug().toLowerCase();
-      nav.innerHTML=channels.map(channel=>{
+      const navHTML=channels.map(channel=>{
         const current=String(channel.slug||"").toLowerCase()===active;
         return `<a${current?' aria-current="page"':''} href="${escapeHTML(channel.url)}">${escapeHTML(channel.name)}</a>`;
       }).join("");
+      if(nav.innerHTML!==navHTML)nav.innerHTML=navHTML;
     }
 
     if(menu.dataset.infinityNormalizedBound!=="1"){
@@ -102,15 +104,23 @@
 
   function watchPlayers(){
     enhanceMediaPermissions();
+    let remoteQueued=false;
+    const queueRemote=()=>{
+      if(remoteQueued)return;
+      remoteQueued=true;
+      requestAnimationFrame(()=>{remoteQueued=false;normalizeRemote();});
+    };
     const observer=new MutationObserver(records=>{
+      let remoteMissing=!document.querySelector(".channel-menu.infinity-normalized-menu");
       for(const record of records){
         record.addedNodes.forEach(node=>{
           if(node.nodeType!==1)return;
           if(node.matches&&node.matches("iframe"))enhanceMediaPermissions(node.parentNode||document);
-          else if(node.querySelectorAll)enhanceMediaPermissions(node);
+          else if(node.querySelector&&node.querySelector("iframe"))enhanceMediaPermissions(node);
+          if(node.matches&&node.matches(".channel-menu")||node.querySelector&&node.querySelector(".channel-menu"))remoteMissing=true;
         });
       }
-      normalizeRemote();
+      if(remoteMissing)queueRemote();
     });
     observer.observe(document.documentElement,{childList:true,subtree:true});
   }
