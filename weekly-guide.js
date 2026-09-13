@@ -252,6 +252,9 @@
     guide.querySelector(".weekly-guide-prev").addEventListener("click", () => { selected = Math.max(0, selected - 1); render(); });
     guide.querySelector(".weekly-guide-next").addEventListener("click", () => { selected = Math.min(days.length - 1, selected + 1); render(); });
     startReminderClock();
+    const nextMidnight = new Date();
+    nextMidnight.setHours(24, 0, 2, 0);
+    setTimeout(() => location.reload(), Math.max(1000, nextMidnight.getTime() - Date.now()));
     window.InfinityWeeklyGuide = {version:VERSION, days, refresh:render};
   }
 
