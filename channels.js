@@ -26,7 +26,7 @@
     { name:"Animasync", slug:"Animasync", url:"https://www-infinity4.github.io/Animasync/", group:"SYNC" }
   ];
 
-  const STYLE_ID = "infinity-shared-remote-style-v2";
+  const STYLE_ID = "infinity-shared-network-style-v3";
   const SOURCE_CACHE = new Map();
   let guideObserver = null;
   let mutationObserver = null;
@@ -50,23 +50,21 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      .infinity-auto-menu{position:relative;z-index:2147483000;margin-left:auto;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-      .infinity-auto-menu>summary{list-style:none;cursor:pointer;min-width:48px;min-height:44px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.28);border-radius:999px;color:#fff;background:rgba(8,12,22,.9);box-shadow:0 8px 26px rgba(0,0,0,.35);font-weight:800}
-      .infinity-auto-menu>summary::-webkit-details-marker{display:none}.infinity-auto-menu[open]>summary{background:#111827}
-      .infinity-auto-menu nav{position:absolute;right:0;top:calc(100% + 8px);width:min(88vw,350px);max-height:min(72vh,650px);overflow:auto;padding:9px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(5,8,16,.98);box-shadow:0 18px 55px rgba(0,0,0,.58);display:grid;gap:5px}
+      /* IMPORTANT: existing .channel-menu elements keep each site's native CSS. */
+      .infinity-auto-menu{position:fixed;right:10px;top:10px;z-index:2147483000;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+      .infinity-auto-menu>summary{list-style:none;cursor:pointer;min-width:48px;min-height:44px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.28);border-radius:999px;color:#fff;background:rgba(8,12,22,.92);box-shadow:0 8px 26px rgba(0,0,0,.35);font-weight:800}
+      .infinity-auto-menu>summary::-webkit-details-marker{display:none}
+      .infinity-auto-menu nav{position:absolute;right:0;top:calc(100% + 8px);width:min(88vw,340px);max-height:72vh;overflow:auto;padding:9px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(5,8,16,.98);box-shadow:0 18px 55px rgba(0,0,0,.58);display:grid;gap:5px}
       .infinity-auto-menu nav a{display:block;padding:10px 11px;border-radius:10px;color:#fff!important;text-decoration:none!important;background:rgba(255,255,255,.055);font-weight:700}
-      .infinity-auto-menu nav a:hover,.infinity-auto-menu nav a:focus-visible{background:rgba(255,255,255,.15)}
       .infinity-auto-menu nav a[aria-current="page"]{outline:2px solid #f5c451;background:rgba(245,196,81,.14)}
       .infinity-auto-menu .infinity-remote-heading{padding:9px 9px 4px;color:#f5c451;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
-      .infinity-auto-menu.infinity-remote-fixed{position:fixed;right:10px;top:10px;z-index:2147483000}
       .infinity-shared-actions{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
       .infinity-shared-actions.infinity-actions-fixed{position:fixed;right:10px;bottom:10px;z-index:2147482900;padding:8px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(5,8,16,.94);box-shadow:0 12px 40px rgba(0,0,0,.5)}
       .infinity-shared-share,.infinity-wallet-button{min-height:42px;padding:0 13px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:#111827;color:#fff;font:800 13px/1 system-ui;cursor:pointer}
       .infinity-wallet-wrap{position:relative;display:inline-flex}.infinity-wallet-button{background:#201837}
       .infinity-wallet-panel{position:absolute;right:0;bottom:calc(100% + 8px);min-width:230px;padding:12px;border:1px solid rgba(255,255,255,.2);border-radius:14px;background:rgba(5,8,16,.98);box-shadow:0 18px 50px rgba(0,0,0,.55);color:#fff;z-index:2147483000;font:600 13px/1.4 system-ui}
       .infinity-wallet-panel[hidden]{display:none}.infinity-wallet-panel strong{display:block;font-size:24px;color:#f5c451}.infinity-wallet-panel small{display:block;margin-top:5px;opacity:.78}
-      .infinity-created-directory,.channel-directory{font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-      .infinity-created-directory{margin:28px auto;padding:18px;width:min(1180px,calc(100% - 24px));border:1px solid rgba(255,255,255,.14);border-radius:20px;background:rgba(6,10,20,.9);color:#fff}
+      .infinity-created-directory{margin:28px auto;padding:18px;width:min(1180px,calc(100% - 24px));border:1px solid rgba(255,255,255,.14);border-radius:20px;background:rgba(6,10,20,.9);color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
       .infinity-live-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}.infinity-live-heading strong{font-size:22px}.infinity-live-heading span{font-size:12px;opacity:.72}
       .channel-directory nav.infinity-live-guide{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px!important;align-items:stretch}
       .infinity-live-guide a{display:flex!important;flex-direction:column;gap:5px;padding:12px!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:14px!important;background:rgba(255,255,255,.055)!important;color:#fff!important;text-decoration:none!important;min-width:0}
@@ -83,28 +81,31 @@
     return `<a${current ? ' aria-current="page"' : ''} href="${channel.url}">${esc(channel.name)}</a>`;
   }
 
-  function renderRemote(nav) {
+  function renderRemote(nav, fallback) {
     if (!nav) return;
     const active = currentSlug();
     const tv = channels.filter(channel => channel.group === "TV");
     const syncChannels = channels.filter(channel => channel.group === "SYNC");
-    nav.innerHTML = `<div class="infinity-remote-heading">Live channels</div>${tv.map(channel => linkHTML(channel, active)).join("")}<div class="infinity-remote-heading">Sync channels</div>${syncChannels.map(channel => linkHTML(channel, active)).join("")}`;
+    if (fallback) {
+      nav.innerHTML = `<div class="infinity-remote-heading">Live channels</div>${tv.map(channel => linkHTML(channel, active)).join("")}<div class="infinity-remote-heading">Sync channels</div>${syncChannels.map(channel => linkHTML(channel, active)).join("")}`;
+      return;
+    }
+    /* Native hamburgers get only links. No shared wrapper/classes/headings alter their layout. */
+    nav.innerHTML = tv.concat(syncChannels).map(channel => linkHTML(channel, active)).join("");
   }
 
   function ensureMenu() {
     const existing = document.querySelector(".channel-menu");
     if (existing) {
-      existing.classList.add("infinity-auto-menu");
-      renderRemote(existing.querySelector("nav"));
+      existing.classList.remove("infinity-auto-menu");
+      renderRemote(existing.querySelector("nav"), false);
       return existing;
     }
     const details = document.createElement("details");
     details.className = "channel-menu infinity-auto-menu";
     details.innerHTML = '<summary aria-label="Open channel remote"><span aria-hidden="true">☰</span><span class="menu-label">Remote</span></summary><nav aria-label="Switch channels"></nav>';
-    const host = document.querySelector(".masthead, header, .topbar, .site-header");
-    if (host) host.appendChild(details);
-    else { details.classList.add("infinity-remote-fixed"); document.body.appendChild(details); }
-    renderRemote(details.querySelector("nav"));
+    document.body.appendChild(details);
+    renderRemote(details.querySelector("nav"), true);
     return details;
   }
 
@@ -115,12 +116,10 @@
     const coins = Math.max(0, Number(profile.tokens) || 0);
     const pending = Math.max(0, Number(profile.pendingShareCredits) || 0);
     const shares = Math.max(0, Number(profile.shareCount) || 0);
-    return { coins, pending, shares, total: coins + pending / 10 };
+    return {coins,pending,shares,total:coins + pending / 10};
   }
 
-  function formatCoins(value) {
-    return Number(value || 0).toFixed(1).replace(/\.0$/, ".0");
-  }
+  function formatCoins(value) { return Number(value || 0).toFixed(1); }
 
   function refreshWallet() {
     const snap = walletSnapshot();
@@ -148,7 +147,7 @@
     const attemptId = `shared-channel-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
     if (window.StarQuestAuth && typeof window.StarQuestAuth.recordShare === "function") {
       try {
-        const result = window.StarQuestAuth.recordShare(reference, {attemptId, confirmed:true, verified:true, method:"web_share_api", url:reference, showTitle:document.title});
+        const result = window.StarQuestAuth.recordShare(reference, {attemptId,confirmed:true,verified:true,method:"web_share_api",url:reference,showTitle:document.title});
         if (result && result.ok) { refreshWallet(); return result; }
       } catch (_) {}
     }
@@ -161,15 +160,16 @@
     profile.pendingShareCredits = Math.max(0, Number(profile.pendingShareCredits) || 0) + 1;
     profile.shareEvents = Array.isArray(profile.shareEvents) ? profile.shareEvents : [];
     profile.ledger = Array.isArray(profile.ledger) ? profile.ledger : [];
-    const event = {id:attemptId,attemptId,contentId:reference,method:"web_share_api",confirmed:true,verified:true,createdAt:Date.now()};
+    const event = {id:attemptId,attemptId,contentId:reference,method:"web_share_api",confirmed:true,verified:true,verificationState:"client_confirmed",showTitle:document.title,createdAt:Date.now()};
     profile.shareEvents.push(event);
     let awarded = 0;
     while (profile.pendingShareCredits >= 10) { profile.pendingShareCredits -= 10; profile.tokens += 1; awarded += 1; }
     profile.ledger.push({id:`tx-${attemptId}`,type:awarded?"share_reward":"share_credit",amount:awarded,balance:profile.tokens,pendingShareCredits:profile.pendingShareCredits,reason:awarded?"Share reward: 10 completed shares":`Confirmed share receipt ${profile.pendingShareCredits}/10`,referenceId:attemptId,createdAt:Date.now()});
-    profile.shareEvents = profile.shareEvents.slice(-250); profile.ledger = profile.ledger.slice(-500);
+    profile.shareEvents = profile.shareEvents.slice(-250);
+    profile.ledger = profile.ledger.slice(-500);
     if (signedIn) { users[session.key] = profile; localStorage.setItem("starquest_users", JSON.stringify(users)); }
     else localStorage.setItem("starquest_guest_profile_v1", JSON.stringify(profile));
-    window.dispatchEvent(new CustomEvent("starquest:share-progress", {detail:{lifetimeShareCount:profile.shareCount,progressToNextCoin:profile.pendingShareCredits,sharesPerCoin:10,awarded,balance:profile.tokens,event}}));
+    window.dispatchEvent(new CustomEvent("starquest:share-progress", {detail:{user:profile,lifetimeShareCount:profile.shareCount,progressToNextCoin:profile.pendingShareCredits,sharesPerCoin:10,awarded,balance:profile.tokens,event}}));
     refreshWallet();
     return {ok:true,awarded,progressToNextCoin:profile.pendingShareCredits,balance:profile.tokens};
   }
@@ -184,7 +184,7 @@
     event.stopImmediatePropagation();
     const nowTitle = document.querySelector("#nowTitle,[data-now-title]");
     const title = nowTitle && nowTitle.textContent && !/loading/i.test(nowTitle.textContent) ? nowTitle.textContent.trim() : document.title;
-    const payload = {title:`${title} · ${document.title}`, text:`Watch ${title} on ${document.title}.`, url:location.href};
+    const payload = {title:`${title} · ${document.title}`,text:`Watch ${title} on ${document.title}.`,url:location.href};
     try { if (window.InfinityChannelPiP && typeof window.InfinityChannelPiP.system === "function") window.InfinityChannelPiP.system(); } catch (_) {}
     if (!navigator.share) {
       try { await navigator.clipboard.writeText(payload.url); setShareStatus("Link copied. A confirmed system share earns 1/10 StarCoin."); }
@@ -211,8 +211,7 @@
 
   function attachWalletBeside(button) {
     if (!button || button.parentElement && button.parentElement.querySelector(":scope > .infinity-wallet-wrap")) return;
-    const wallet = makeWallet();
-    button.insertAdjacentElement("afterend", wallet);
+    button.insertAdjacentElement("afterend", makeWallet());
     refreshWallet();
   }
 
@@ -221,7 +220,8 @@
     const realShare = shares.find(button => button.dataset.infinityGeneratedShare !== "1");
     const fixed = document.querySelector(".infinity-shared-actions.infinity-actions-fixed");
     if (realShare) {
-      bindShareButton(realShare); attachWalletBeside(realShare);
+      bindShareButton(realShare);
+      attachWalletBeside(realShare);
       if (fixed) fixed.remove();
       return;
     }
@@ -230,10 +230,14 @@
     const bar = document.createElement("div");
     bar.className = "infinity-shared-actions infinity-actions-fixed";
     const share = document.createElement("button");
-    share.type = "button"; share.className = "infinity-shared-share share-button"; share.dataset.infinityGeneratedShare = "1"; share.textContent = "Share · +1/10 ⭐";
+    share.type = "button";
+    share.className = "infinity-shared-share share-button";
+    share.dataset.infinityGeneratedShare = "1";
+    share.textContent = "Share · +1/10 ⭐";
     bar.append(share, makeWallet());
     document.body.appendChild(bar);
-    bindShareButton(share); refreshWallet();
+    bindShareButton(share);
+    refreshWallet();
   }
 
   function ensureDirectory() {
@@ -244,7 +248,7 @@
       const footer = document.querySelector("footer");
       if (footer) footer.parentNode.insertBefore(section, footer); else document.body.appendChild(section);
     }
-    section.innerHTML = '<div class="infinity-live-heading"><strong>Live now</strong><span>Synced channel guide · times shown in your local time</span></div><nav class="infinity-live-guide" aria-label="Live channel guide"></nav>';
+    section.innerHTML = '<div class="infinity-live-heading"><strong>Live now</strong><span>Other channels · times shown in your local time</span></div><nav class="infinity-live-guide" aria-label="Live channel guide"></nav>';
     renderGuideShell(section.querySelector("nav"));
     return section;
   }
@@ -274,13 +278,7 @@
   }
 
   function fakeDocument() {
-    return {
-      querySelector:() => null,
-      querySelectorAll:() => [],
-      createElement:() => ({dataset:{},style:{},setAttribute(){},appendChild(){}}),
-      head:{appendChild(){}}, body:{appendChild(){}},
-      addEventListener(){}
-    };
+    return {querySelector:()=>null,querySelectorAll:()=>[],createElement:()=>({dataset:{},style:{},setAttribute(){},appendChild(){}}),head:{appendChild(){}},body:{appendChild(){}},addEventListener(){}};
   }
 
   async function sourceBundle(channel) {
@@ -288,11 +286,11 @@
     const promise = Promise.all([
       fetch(`${channel.url}engine.js`, {cache:"force-cache"}).then(response => response.ok ? response.text() : Promise.reject(new Error("engine"))),
       fetch(`${channel.url}data/catalog.js`, {cache:"force-cache"}).then(response => response.ok ? response.text() : Promise.reject(new Error("catalog")))
-    ]).then(([engineSource, catalogSource]) => {
+    ]).then(([engineSource,catalogSource]) => {
       const box = {};
       const doc = fakeDocument();
-      Function("window","document", engineSource)(box, doc);
-      Function("window","document", catalogSource)(box, doc);
+      Function("window","document",engineSource)(box,doc);
+      Function("window","document",catalogSource)(box,doc);
       return box;
     });
     SOURCE_CACHE.set(channel.slug, promise);
@@ -316,7 +314,7 @@
     const item = block && (block.movie || block.program || block.show || block);
     const title = item && (item.title || item.name);
     if (!title) throw new Error("title unavailable");
-    return {title, startsAtMs:block.startsAtMs, endsAtMs:block.endsAtMs, updatedAt:Date.now()};
+    return {title,startsAtMs:block.startsAtMs,endsAtMs:block.endsAtMs,updatedAt:Date.now()};
   }
 
   async function nowPlaying(channel) {
