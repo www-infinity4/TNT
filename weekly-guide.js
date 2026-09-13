@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "20260913-week1";
+  const VERSION = "20260913-week3";
   const REMINDER_KEY = "infinity_channel_reminders_v1";
   const BLOCKED_RATED_TITLES = new Set([
     "galaxy of terror", "chopping mall", "far out man", "fatal combat", "hologram man",
@@ -178,13 +178,13 @@
     style.textContent = `
       .weekly-guide-shell{display:grid;gap:16px}.weekly-guide-intro{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
       .weekly-guide-open,.weekly-guide-days button,.weekly-guide-arrow,.weekly-guide-reminder{min-height:44px;padding:0 15px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:#15111d;color:#fff;font:800 14px system-ui;cursor:pointer}
-      .weekly-guide-panel[hidden]{display:none}.weekly-guide-panel{display:grid;gap:14px}.weekly-guide-nav{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center}
+      .weekly-guide-panel[hidden],.weekly-guide-preview[hidden]{display:none}.weekly-guide-panel{display:grid;gap:14px}.weekly-guide-nav{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center}
       .weekly-guide-days{display:flex;gap:7px;overflow-x:auto;padding:4px;scrollbar-width:thin}.weekly-guide-days button{flex:0 0 auto}.weekly-guide-days button[aria-current="date"]{background:#f3c76a;color:#09070f}
-      .weekly-guide-date{margin:0;font:700 clamp(1.45rem,4vw,2.4rem)/1.1 Georgia,serif}.weekly-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      .weekly-guide-date{margin:0;font:700 clamp(1.45rem,4vw,2.4rem)/1.1 Georgia,serif}.weekly-guide-preview,.weekly-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
       .weekly-guide-card{overflow:hidden;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(10,10,18,.88)}.weekly-guide-card>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:90px 1fr;grid-template-areas:"art time" "art title" "art kind";gap:3px 12px;align-items:center;min-height:106px;padding:8px}
       .weekly-guide-card>summary::-webkit-details-marker{display:none}.weekly-guide-card img{grid-area:art;width:90px;height:90px;object-fit:cover;border-radius:11px;background:#080808}.weekly-guide-time{grid-area:time;color:#f3c76a;font-weight:900}.weekly-guide-title{grid-area:title;font:700 1.05rem/1.12 Georgia,serif}.weekly-guide-kind{grid-area:kind;color:#bcb2c8;font-size:.78rem}
       .weekly-guide-detail{display:grid;gap:9px;padding:4px 13px 14px}.weekly-guide-detail p{margin:0;line-height:1.5;color:#eee}.weekly-guide-source{color:#bcb2c8}.weekly-guide-reminder{justify-self:start}
-      @media(max-width:760px){.weekly-guide-grid{grid-template-columns:1fr}.weekly-guide-card>summary{grid-template-columns:112px 1fr}.weekly-guide-card img{width:112px;height:88px}.weekly-guide-nav{grid-template-columns:44px minmax(0,1fr) 44px}.weekly-guide-arrow{padding:0}}
+      @media(max-width:760px){.weekly-guide-preview,.weekly-guide-grid{grid-template-columns:1fr}.weekly-guide-card>summary{grid-template-columns:112px 1fr}.weekly-guide-card img{width:112px;height:88px}.weekly-guide-nav{grid-template-columns:44px minmax(0,1fr) 44px}.weekly-guide-arrow{padding:0}}
     `;
     document.head.appendChild(style);
   }
@@ -204,6 +204,7 @@
     const now = Date.now();
     guide.innerHTML = `<div class="weekly-guide-shell">
       <div class="weekly-guide-intro"><div><p>SEVEN-DAY CHANNEL SCHEDULE</p><h2>What’s on next</h2></div><button class="weekly-guide-open" type="button" aria-expanded="false">See more</button></div>
+      <div class="weekly-guide-preview" aria-label="Next three programs"></div>
       <div class="weekly-guide-panel" hidden>
         <div class="weekly-guide-nav"><button class="weekly-guide-arrow weekly-guide-prev" type="button" aria-label="Previous day">‹</button><div class="weekly-guide-days"></div><button class="weekly-guide-arrow weekly-guide-next" type="button" aria-label="Next day">›</button></div>
         <h3 class="weekly-guide-date"></h3><div class="weekly-guide-grid"></div>
@@ -211,17 +212,13 @@
     </div>`;
     const open = guide.querySelector(".weekly-guide-open");
     const panel = guide.querySelector(".weekly-guide-panel");
+    const preview = guide.querySelector(".weekly-guide-preview");
     const dayBar = guide.querySelector(".weekly-guide-days");
     const grid = guide.querySelector(".weekly-guide-grid");
     const heading = guide.querySelector(".weekly-guide-date");
 
-    function render() {
-      const day = days[selected];
-      dayBar.innerHTML = days.map((item, index) => `<button type="button" data-day="${index}"${index === selected ? ' aria-current="date"' : ""}>${safeText(formatDay(item.startsAtMs))}</button>`).join("");
-      heading.textContent = formatLongDay(day.startsAtMs);
-      const blocks = day.blocks.filter(block => selected > 0 || block.endsAtMs > now);
-      grid.innerHTML = blocks.length ? blocks.map(cardHTML).join("") : "<p>Today’s remaining programs have finished. Choose tomorrow to continue.</p>";
-      guide.querySelectorAll(".weekly-guide-card").forEach(card => {
+    function bindCards(root, blocks) {
+      root.querySelectorAll(".weekly-guide-card").forEach(card => {
         card.addEventListener("toggle", () => {
           if (!card.open) return;
           const block = blocks.find(item => Number(item.startsAtMs) === Number(card.dataset.start));
@@ -236,10 +233,24 @@
       });
     }
 
+    const upcoming = days.flatMap(day => day.blocks).filter(block => block.endsAtMs > now).slice(0, 3);
+    preview.innerHTML = upcoming.length ? upcoming.map(cardHTML).join("") : "<p>No more programs are scheduled yet.</p>";
+    bindCards(preview, upcoming);
+
+    function render() {
+      const day = days[selected];
+      dayBar.innerHTML = days.map((item, index) => `<button type="button" data-day="${index}"${index === selected ? ' aria-current="date"' : ""}>${safeText(formatDay(item.startsAtMs))}</button>`).join("");
+      heading.textContent = formatLongDay(day.startsAtMs);
+      const blocks = day.blocks.filter(block => selected > 0 || block.endsAtMs > now);
+      grid.innerHTML = blocks.length ? blocks.map(cardHTML).join("") : "<p>Today’s remaining programs have finished. Choose tomorrow to continue.</p>";
+      bindCards(grid, blocks);
+    }
+
     open.addEventListener("click", () => {
       const expanded = open.getAttribute("aria-expanded") !== "true";
       open.setAttribute("aria-expanded", String(expanded));
       open.textContent = expanded ? "Show less" : "See more";
+      preview.hidden = expanded;
       panel.hidden = !expanded;
       if (expanded) render();
     });
