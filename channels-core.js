@@ -130,7 +130,32 @@
     return details;
   }
 
+  function migrateLegacyShareProgress() {
+    const marker = "infinity_legacy_share_progress_migrated_v1";
+    try {
+      if (localStorage.getItem(marker) === "1") return;
+      const legacy = Math.min(9, Math.max(0, Number(localStorage.getItem("infinity_channel_share_progress_v1")) || 0));
+      if (legacy > 0) {
+        const session = safeJSON("starquest_session", null);
+        const users = safeJSON("starquest_users", {});
+        const signedIn = session && session.key && users[session.key];
+        const profile = signedIn || safeJSON("starquest_guest_profile_v1", {key:"__guest__",username:"Guest",tokens:0,shareCount:0,pendingShareCredits:0,shareEvents:[],ledger:[]});
+        profile.tokens = Math.max(0, Number(profile.tokens) || 0);
+        profile.shareCount = Math.max(0, Number(profile.shareCount) || 0) + legacy;
+        profile.pendingShareCredits = Math.max(0, Number(profile.pendingShareCredits) || 0) + legacy;
+        let awarded = 0;
+        while (profile.pendingShareCredits >= 10) { profile.pendingShareCredits -= 10; profile.tokens += 1; awarded += 1; }
+        profile.ledger = Array.isArray(profile.ledger) ? profile.ledger : [];
+        profile.ledger.push({id:`tx-legacy-${Date.now().toString(36)}`,type:awarded?"share_reward":"share_credit",amount:awarded,balance:profile.tokens,pendingShareCredits:profile.pendingShareCredits,reason:`Recovered ${legacy}/10 legacy channel share credit`,createdAt:Date.now()});
+        if (signedIn) { users[session.key] = profile; localStorage.setItem("starquest_users", JSON.stringify(users)); }
+        else localStorage.setItem("starquest_guest_profile_v1", JSON.stringify(profile));
+      }
+      localStorage.setItem(marker, "1");
+    } catch (_) {}
+  }
+
   function walletSnapshot() {
+    migrateLegacyShareProgress();
     const session = safeJSON("starquest_session", null);
     const users = safeJSON("starquest_users", {});
     const profile = session && session.key && users[session.key] ? users[session.key] : safeJSON("starquest_guest_profile_v1", {});
