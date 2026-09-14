@@ -1,105 +1,28 @@
 (function(){
   "use strict";
-  const EXTRA_CHANNELS=[
-    {name:"MTV",slug:"MTV",url:"https://www-infinity4.github.io/MTV/",group:"TV",liveLabel:"MTV · nonstop music videos · five-minute grid"},
-    {name:"VH1",slug:"VH1",url:"https://www-infinity4.github.io/VH1/",group:"TV",liveLabel:"VH1 · nonstop music videos · five-minute grid"},
-    {name:"ESPN",slug:"ESPN",url:"https://www-infinity4.github.io/ESPN/",group:"TV",liveLabel:"ESPN · full games with scheduled highlight mixes"}
-  ];
-  const CORE_URL="https://www-infinity4.github.io/TNT/channels-core.js?v=20260913-priority";
-  const CONTROL_URL="https://www-infinity4.github.io/Control-Phi/control-phi.js?v=20260913-news2";
-  const CONTROL_FALLBACK_URL="https://www-infinity4.github.io/News-Phi/control-phi.js?v=20260913-news2";
+  const CONTROL_URL="https://www-infinity4.github.io/Control-Phi/control-phi.js?v=20260914-network1";
+  const POLICY_URL="https://www-infinity4.github.io/Control-Phi/channel-policy.js?v=20260914-network1";
+  const FALLBACK_URL="https://www-infinity4.github.io/News-Phi/control-phi.js?v=20260914-network1";
 
-  function loadControlFallback(){
+  function addScript(src,key,onerror){
+    if(document.querySelector(`script[data-${key}]`)||document.querySelector(`script[src^="${src.split('?')[0]}"]`))return;
+    const script=document.createElement("script");
+    script.src=src;
+    script.async=false;
+    script.dataset[key]="1";
+    if(onerror)script.onerror=onerror;
+    (document.head||document.documentElement).appendChild(script);
+  }
+
+  function loadFallback(){
     if(window.ControlPhi&&window.ControlPhi.version)return;
-    if(document.querySelector('script[data-infinity-control-phi-fallback]'))return;
-    const fallback=document.createElement("script");
-    fallback.src=CONTROL_FALLBACK_URL;
-    fallback.async=false;
-    fallback.dataset.infinityControlPhiFallback="1";
-    fallback.onerror=()=>console.error("News Phi fallback bridge failed to load");
-    (document.head||document.documentElement).appendChild(fallback);
+    addScript(FALLBACK_URL,"infinityControlFallback");
   }
 
-  function ensureControlPhi(){
-    if(window.ControlPhi&&window.ControlPhi.version)return;
-    const existing=document.querySelector('script[src*="/Control-Phi/control-phi.js"]');
-    if(existing){
-      if(existing.dataset.infinityControlWatch!=="1"){
-        existing.dataset.infinityControlWatch="1";
-        existing.addEventListener("error",loadControlFallback,{once:true});
-        setTimeout(()=>{if(!window.ControlPhi)loadControlFallback()},1800);
-      }
-      return;
-    }
-    if(document.querySelector('script[data-infinity-control-phi]'))return;
-    const bridge=document.createElement("script");
-    bridge.src=CONTROL_URL;
-    bridge.async=false;
-    bridge.dataset.infinityControlPhi="1";
-    bridge.onerror=loadControlFallback;
-    (document.head||document.documentElement).appendChild(bridge);
-    setTimeout(()=>{if(!window.ControlPhi)loadControlFallback()},1800);
-  }
+  addScript(POLICY_URL,"infinityChannelPolicy");
+  if(!(window.ControlPhi&&window.ControlPhi.version))addScript(CONTROL_URL,"infinityControlPhi",loadFallback);
 
-  function currentSlug(){return(location.pathname.split("/").filter(Boolean)[0]||"").toLowerCase()}
-  function anchor(channel,directory){
-    const a=document.createElement("a");
-    a.href=channel.url;
-    if(channel.slug.toLowerCase()===currentSlug())a.setAttribute("aria-current","page");
-    if(directory){
-      const name=document.createElement("span");name.className="infinity-channel-name";name.textContent=channel.name;
-      const live=document.createElement("small");live.dataset.liveState="ready";live.textContent=`LIVE · ${channel.liveLabel}`;
-      a.append(name,live);
-    }else a.textContent=channel.name;
-    return a;
-  }
-  function addToArray(list){
-    if(!Array.isArray(list))return;
-    EXTRA_CHANNELS.forEach(channel=>{if(!list.some(item=>item&&String(item.slug).toLowerCase()===channel.slug.toLowerCase()))list.push({...channel})});
-  }
-  function insertMenuLinks(){
-    document.querySelectorAll(".channel-menu nav").forEach(nav=>{
-      const syncDivider=Array.from(nav.children).find(node=>node.classList&&node.classList.contains("infinity-remote-heading")&&/sync/i.test(node.textContent||""));
-      const firstSync=syncDivider||Array.from(nav.querySelectorAll("a")).find(a=>/\/Astraflix\/?$/i.test(new URL(a.href,location.href).pathname));
-      EXTRA_CHANNELS.forEach(channel=>{
-        if(Array.from(nav.querySelectorAll("a")).some(a=>new URL(a.href,location.href).pathname.toLowerCase()===new URL(channel.url).pathname.toLowerCase()))return;
-        nav.insertBefore(anchor(channel,false),firstSync||null);
-      });
-    });
-  }
-  function insertDirectoryLinks(){
-    document.querySelectorAll(".channel-directory nav").forEach(nav=>{
-      const divider=nav.querySelector(".infinity-guide-divider");
-      EXTRA_CHANNELS.forEach(channel=>{
-        if(Array.from(nav.querySelectorAll("a")).some(a=>new URL(a.href,location.href).pathname.toLowerCase()===new URL(channel.url).pathname.toLowerCase()))return;
-        nav.insertBefore(anchor(channel,true),divider||null);
-      });
-    });
-  }
-  function register(){
-    ensureControlPhi();
-    addToArray(window.INFINITY_CHANNELS);
-    if(window.InfinityChannelRemote){
-      addToArray(window.InfinityChannelRemote.channels);
-      if(!window.InfinityChannelRemote.__extraWrapped&&typeof window.InfinityChannelRemote.refresh==="function"){
-        const original=window.InfinityChannelRemote.refresh;
-        window.InfinityChannelRemote.refresh=function(){const result=original.apply(this,arguments);setTimeout(register,0);return result};
-        window.InfinityChannelRemote.__extraWrapped=true;
-      }
-    }
-    insertMenuLinks();insertDirectoryLinks();
-  }
-  function hook(){
-    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(register,0),{once:true});
-    else setTimeout(register,0);
-    window.addEventListener("pageshow",register);
-  }
-
-  ensureControlPhi();
-  const script=document.createElement("script");
-  script.src=CORE_URL;
-  script.async=false;
-  script.onload=()=>{register();hook()};
-  script.onerror=()=>console.error("Shared channel core failed to load");
-  (document.head||document.documentElement).appendChild(script);
+  // Legacy compatibility: pages that used to expect TNT/channels.js can keep
+  // the same script tag, but Control Phi is now the only channel registry.
+  window.INFINITY_CHANNEL_NETWORK_SOURCE="Control-Phi";
 })();
