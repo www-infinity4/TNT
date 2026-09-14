@@ -2,6 +2,7 @@
   "use strict";
   const ROOT="https://www-infinity4.github.io/";
   const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
+  const NAV_URL=ROOT+"Control-Phi/channel-navigation.js?v=20260914-nav1";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
   const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique3";
   const PLAYBACK_GUARD_URL=ROOT+"Control-Phi/movie-source-playback-guard.js?v=20260914-playback1";
@@ -73,6 +74,7 @@
   }
 
   bootstrapMovieSourceFarm();
+  addScript(NAV_URL,"infinityCanonicalChannelNavigation");
   addScript(POLICY_URL,"infinityChannelPolicy");
   if(!(window.ControlPhi&&window.ControlPhi.version))addScript(CONTROL_URL,"infinityControlPhi",loadFallback);
   hardenLoadedEngines();
