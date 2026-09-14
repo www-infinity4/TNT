@@ -4,6 +4,7 @@
   const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
   const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique3";
+  const PLAYBACK_GUARD_URL=ROOT+"Control-Phi/movie-source-playback-guard.js?v=20260914-playback1";
   const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
   const MOVIE_REPOS=new Set(["hermit-tv","star-launcher","hbo","cinemax","showtime","starz","encore","tnt"]);
 
@@ -19,17 +20,22 @@
   }
 
   function currentRepo(){return(location.pathname.split("/").filter(Boolean)[0]||"").trim();}
+  function preserveSeedCatalog(){
+    if(window.__INFINITY_MOVIE_SEED_CATALOG||!Array.isArray(window.HERMIT_CATALOG))return;
+    window.__INFINITY_MOVIE_SEED_CATALOG=window.HERMIT_CATALOG.map(item=>({...item}));
+  }
 
   function bootstrapMovieSourceFarm(){
     const repo=currentRepo();
     if(!MOVIE_REPOS.has(repo.toLowerCase())||window.InfinityMovieSourceFarm)return;
+    preserveSeedCatalog();
     const profileUrl=ROOT+encodeURIComponent(repo).replace(/%2F/gi,"/")+"/data/source-profile.js?v=20260914-unique3";
     if(document.readyState==="loading"){
       const close='</scr'+'ipt>';
-      document.write('<script src="'+profileUrl+'">'+close+'<script src="'+MOVIE_FARM_URL+'">'+close);
+      document.write('<script src="'+profileUrl+'">'+close+'<script src="'+MOVIE_FARM_URL+'">'+close+'<script src="'+PLAYBACK_GUARD_URL+'">'+close);
       return;
     }
-    addScript(profileUrl,"infinityMovieProfile",null,()=>addScript(MOVIE_FARM_URL,"infinityMovieSourceFarm"));
+    addScript(profileUrl,"infinityMovieProfile",null,()=>addScript(MOVIE_FARM_URL,"infinityMovieSourceFarm",null,()=>addScript(PLAYBACK_GUARD_URL,"infinityMoviePlaybackGuard")));
   }
 
   function loadFallback(){
@@ -75,5 +81,5 @@
 
   window.INFINITY_CHANNEL_NETWORK_SOURCE="Control-Phi";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
-  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v3";
+  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v3+playback-guard";
 })();
