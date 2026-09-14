@@ -3,7 +3,7 @@
   const ROOT="https://www-infinity4.github.io/";
   const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
-  const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique1";
+  const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique2";
   const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
   const MOVIE_REPOS=new Set(["hermit-tv","star-launcher","hbo","cinemax","showtime","starz","encore","tnt"]);
 
@@ -23,7 +23,7 @@
   function bootstrapMovieSourceFarm(){
     const repo=currentRepo();
     if(!MOVIE_REPOS.has(repo.toLowerCase())||window.InfinityMovieSourceFarm)return;
-    const profileUrl=ROOT+encodeURIComponent(repo).replace(/%2F/gi,"/")+"/data/source-profile.js?v=20260914-unique1";
+    const profileUrl=ROOT+encodeURIComponent(repo).replace(/%2F/gi,"/")+"/data/source-profile.js?v=20260914-unique2";
     if(document.readyState==="loading"){
       const close='</scr'+'ipt>';
       document.write('<script src="'+profileUrl+'">'+close+'<script src="'+MOVIE_FARM_URL+'">'+close);
@@ -75,5 +75,5 @@
 
   window.INFINITY_CHANNEL_NETWORK_SOURCE="Control-Phi";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
-  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v1";
+  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v2";
 })();
