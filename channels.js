@@ -25,10 +25,8 @@
     if(!MOVIE_REPOS.has(repo.toLowerCase())||window.InfinityMovieSourceFarm)return;
     const profileUrl=ROOT+encodeURIComponent(repo).replace(/%2F/gi,"/")+"/data/source-profile.js?v=20260914-unique1";
     if(document.readyState==="loading"){
-      // This loader is already parser-blocking on the channel pages. Writing the
-      // two scripts here keeps source-profile -> source-farm -> app.js ordering
-      // deterministic so the cloned legacy seed is partitioned before scheduling.
-      document.write('<script src="'+profileUrl+'"><\\/script><script src="'+MOVIE_FARM_URL+'"><\\/script>');
+      const close='</scr'+'ipt>';
+      document.write('<script src="'+profileUrl+'">'+close+'<script src="'+MOVIE_FARM_URL+'">'+close);
       return;
     }
     addScript(profileUrl,"infinityMovieProfile",null,()=>addScript(MOVIE_FARM_URL,"infinityMovieSourceFarm"));
