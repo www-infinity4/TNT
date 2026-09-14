@@ -1,17 +1,37 @@
 (function(){
   "use strict";
-  const CONTROL_URL="https://www-infinity4.github.io/Control-Phi/control-phi.js?v=20260914-network2";
-  const POLICY_URL="https://www-infinity4.github.io/Control-Phi/channel-policy.js?v=20260914-network1";
-  const FALLBACK_URL="https://www-infinity4.github.io/News-Phi/control-phi.js?v=20260914-network2";
+  const ROOT="https://www-infinity4.github.io/";
+  const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
+  const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
+  const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique1";
+  const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
+  const MOVIE_REPOS=new Set(["hermit-tv","star-launcher","hbo","cinemax","showtime","starz","encore","tnt"]);
 
-  function addScript(src,key,onerror){
-    if(document.querySelector(`script[data-${key}]`)||document.querySelector(`script[src^="${src.split('?')[0]}"]`))return;
+  function addScript(src,key,onerror,onload){
+    const old=document.querySelector(`script[data-${key}]`)||document.querySelector(`script[src^="${src.split('?')[0]}"]`);
+    if(old){if(onload){if(old.dataset.loaded==="1")onload();else old.addEventListener("load",onload,{once:true});}return old;}
     const script=document.createElement("script");
-    script.src=src;
-    script.async=false;
-    script.dataset[key]="1";
+    script.src=src;script.async=false;script.dataset[key]="1";
     if(onerror)script.onerror=onerror;
+    script.onload=()=>{script.dataset.loaded="1";if(onload)onload();};
     (document.head||document.documentElement).appendChild(script);
+    return script;
+  }
+
+  function currentRepo(){return(location.pathname.split("/").filter(Boolean)[0]||"").trim();}
+
+  function bootstrapMovieSourceFarm(){
+    const repo=currentRepo();
+    if(!MOVIE_REPOS.has(repo.toLowerCase())||window.InfinityMovieSourceFarm)return;
+    const profileUrl=ROOT+encodeURIComponent(repo).replace(/%2F/gi,"/")+"/data/source-profile.js?v=20260914-unique1";
+    if(document.readyState==="loading"){
+      // This loader is already parser-blocking on the channel pages. Writing the
+      // two scripts here keeps source-profile -> source-farm -> app.js ordering
+      // deterministic so the cloned legacy seed is partitioned before scheduling.
+      document.write('<script src="'+profileUrl+'"><\\/script><script src="'+MOVIE_FARM_URL+'"><\\/script>');
+      return;
+    }
+    addScript(profileUrl,"infinityMovieProfile",null,()=>addScript(MOVIE_FARM_URL,"infinityMovieSourceFarm"));
   }
 
   function loadFallback(){
@@ -27,16 +47,9 @@
       const block=args[0]||{};
       const segments=original.apply(this,args);
       if(!Array.isArray(segments)||!segments.some(segment=>segment&&segment.kind==="commercial"))return segments;
-
-      // Legacy channel copies put every station on identical fixed break marks.
-      // Until a channel opts into independentBreaks, remove those commercial
-      // segments and keep the underlying program continuous instead.
       const retained=segments.filter(segment=>segment&&segment.kind!=="commercial").map(segment=>({...segment}));
       let stationStart=0;
-      retained.forEach(segment=>{
-        segment.stationStart=stationStart;
-        stationStart+=Math.max(0,Number(segment.duration)||0);
-      });
+      retained.forEach(segment=>{segment.stationStart=stationStart;stationStart+=Math.max(0,Number(segment.duration)||0);});
       const blockSeconds=Math.max(0,Number(block.blockSeconds||block.fullStationSeconds)||0);
       if(blockSeconds&&stationStart<blockSeconds){
         const remainder=blockSeconds-stationStart;
@@ -55,14 +68,14 @@
     Object.keys(window).filter(name=>/Engine$/.test(name)).forEach(name=>stripLegacyCommercials(window[name]));
   }
 
+  bootstrapMovieSourceFarm();
   addScript(POLICY_URL,"infinityChannelPolicy");
   if(!(window.ControlPhi&&window.ControlPhi.version))addScript(CONTROL_URL,"infinityControlPhi",loadFallback);
   hardenLoadedEngines();
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",hardenLoadedEngines,{once:true});
   else setTimeout(hardenLoadedEngines,0);
 
-  // Legacy compatibility: pages that used to expect TNT/channels.js can keep
-  // the same script tag, but Control Phi is now the only channel registry.
   window.INFINITY_CHANNEL_NETWORK_SOURCE="Control-Phi";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
+  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v1";
 })();
