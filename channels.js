@@ -7,6 +7,46 @@
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
   const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
 
+  function prepareYouTubePlayer(){
+    if(window.__INFINITY_YT_PRELOAD__)return;
+    window.__INFINITY_YT_PRELOAD__=true;
+
+    // Channel apps assign onYouTubeIframeAPIReady after this shared loader runs.
+    // Wrap that assignment so a preloaded API may create the player once, while
+    // the later Enter tap can safely call tick() without constructing it twice.
+    try{
+      let readyHandler=typeof window.onYouTubeIframeAPIReady==="function"?window.onYouTubeIframeAPIReady:null;
+      let wrappedHandler=null;
+      const wrap=handler=>{
+        if(typeof handler!=="function")return handler;
+        let ran=false;
+        return function(){
+          if(ran)return;
+          ran=true;
+          return handler.apply(this,arguments);
+        };
+      };
+      if(readyHandler)wrappedHandler=wrap(readyHandler);
+      Object.defineProperty(window,"onYouTubeIframeAPIReady",{
+        configurable:true,
+        get(){return wrappedHandler;},
+        set(handler){readyHandler=handler;wrappedHandler=wrap(handler);}
+      });
+    }catch(_){ }
+
+    // Defer one task so the page's app.js can install its API-ready callback,
+    // then begin loading the YouTube API before the viewer presses Enter.
+    setTimeout(()=>{
+      if(window.YT&&window.YT.Player)return;
+      if(document.querySelector('script[src*="youtube.com/iframe_api"]'))return;
+      const tag=document.createElement("script");
+      tag.src="https://www.youtube.com/iframe_api";
+      tag.referrerPolicy="strict-origin-when-cross-origin";
+      tag.dataset.infinityYoutubePreload="1";
+      (document.head||document.documentElement).appendChild(tag);
+    },0);
+  }
+
   function addScript(src,key,onerror,onload){
     const old=document.querySelector(`script[data-${key}]`)||document.querySelector(`script[src^="${src.split('?')[0]}"]`);
     if(old){if(onload){if(old.dataset.loaded==="1")onload();else old.addEventListener("load",onload,{once:true});}return old;}
@@ -118,6 +158,10 @@
     Object.keys(window).filter(name=>/Engine$/.test(name)).forEach(name=>stripLegacyCommercials(window[name]));
   }
 
+  // Have the YouTube player ready before the Enter tap so Android can begin
+  // the selected program from that real user gesture instead of an async API callback.
+  prepareYouTubePlayer();
+
   // Live movie channels use their checked-in channel-specific catalogs directly.
   // The experimental movie source farm is intentionally not loaded: it previously
   // replaced real catalogs with tiny seed/cache sets and produced blank weekly slots.
@@ -132,5 +176,5 @@
   window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control-network3+Control-Phi";
   window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js?v=20260914-network3";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
-  window.INFINITY_MOVIE_CATALOG_POLICY="checked-in-channel-catalog+play-real-content-before-repeat+no-blank-inventory";
+  window.INFINITY_MOVIE_CATALOG_POLICY="checked-in-channel-catalog+play-real-content-before-repeat+no-blank-inventory+preloaded-player";
 })();
