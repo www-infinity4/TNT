@@ -5,10 +5,7 @@
   const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
   const NAV_URL=ROOT+"Control-Phi/channel-navigation.js?v=20260914-nav1";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
-  const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique3";
-  const PLAYBACK_GUARD_URL=ROOT+"Omni-TV/movie-source-playback-guard.js?v=20260915-playback4";
   const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
-  const MOVIE_REPOS=new Set(["hermit-tv","star-launcher","hbo","cinemax","showtime","starz","encore","tnt"]);
 
   function addScript(src,key,onerror,onload){
     const old=document.querySelector(`script[data-${key}]`)||document.querySelector(`script[src^="${src.split('?')[0]}"]`);
@@ -19,25 +16,6 @@
     script.onload=()=>{script.dataset.loaded="1";if(onload)onload();};
     (document.head||document.documentElement).appendChild(script);
     return script;
-  }
-
-  function currentRepo(){return(location.pathname.split("/").filter(Boolean)[0]||"").trim();}
-  function preserveSeedCatalog(){
-    if(window.__INFINITY_MOVIE_SEED_CATALOG||!Array.isArray(window.HERMIT_CATALOG))return;
-    window.__INFINITY_MOVIE_SEED_CATALOG=window.HERMIT_CATALOG.map(item=>({...item}));
-  }
-
-  function bootstrapMovieSourceFarm(){
-    const repo=currentRepo();
-    if(!MOVIE_REPOS.has(repo.toLowerCase())||window.InfinityMovieSourceFarm)return;
-    preserveSeedCatalog();
-    const profileUrl=ROOT+encodeURIComponent(repo).replace(/%2F/gi,"/")+"/data/source-profile.js?v=20260914-unique3";
-    if(document.readyState==="loading"){
-      const close='</scr'+'ipt>';
-      document.write('<script src="'+profileUrl+'">'+close+'<script src="'+MOVIE_FARM_URL+'">'+close+'<script src="'+PLAYBACK_GUARD_URL+'">'+close);
-      return;
-    }
-    addScript(profileUrl,"infinityMovieProfile",null,()=>addScript(MOVIE_FARM_URL,"infinityMovieSourceFarm",null,()=>addScript(PLAYBACK_GUARD_URL,"infinityMoviePlaybackGuard")));
   }
 
   function loadFallback(){
@@ -74,11 +52,10 @@
     Object.keys(window).filter(name=>/Engine$/.test(name)).forEach(name=>stripLegacyCommercials(window[name]));
   }
 
-  // Omni Control network3 is the visible remote on every legacy channel page.
-  // Wallet UI updates are event-driven/idempotent so the shared remote cannot
-  // create a MutationObserver feedback loop that freezes channel playback.
+  // Live channels now use their checked-in curated catalogs directly.
+  // The experimental movie source farm is intentionally NOT loaded here:
+  // it previously replaced complete weekly catalogs with tiny seed/cache sets.
   addScript(OMNI_CONTROL_URL,"infinityOmniControl");
-  bootstrapMovieSourceFarm();
   addScript(NAV_URL,"infinityCanonicalChannelNavigation");
   addScript(POLICY_URL,"infinityChannelPolicy");
   if(!(window.ControlPhi&&window.ControlPhi.version))addScript(CONTROL_URL,"infinityControlPhi",loadFallback);
@@ -89,5 +66,5 @@
   window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control-network3+Control-Phi";
   window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js?v=20260914-network3";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
-  window.INFINITY_MOVIE_CATALOG_POLICY="curated-seed-preserved+unique-source-farm-v3+omni-playback-guard-v4";
+  window.INFINITY_MOVIE_CATALOG_POLICY="checked-in-curated-catalog-only";
 })();
