@@ -6,7 +6,7 @@
   const NAV_URL=ROOT+"Control-Phi/channel-navigation.js?v=20260914-nav1";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
   const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique3";
-  const PLAYBACK_GUARD_URL=ROOT+"Control-Phi/movie-source-playback-guard.js?v=20260914-playback3";
+  const PLAYBACK_GUARD_URL=ROOT+"Omni-TV/movie-source-playback-guard.js?v=20260915-playback4";
   const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
   const MOVIE_REPOS=new Set(["hermit-tv","star-launcher","hbo","cinemax","showtime","starz","encore","tnt"]);
 
@@ -89,5 +89,5 @@
   window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control-network3+Control-Phi";
   window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js?v=20260914-network3";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
-  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v3+playback-guard-v3";
+  window.INFINITY_MOVIE_CATALOG_POLICY="curated-seed-preserved+unique-source-farm-v3+omni-playback-guard-v4";
 })();
