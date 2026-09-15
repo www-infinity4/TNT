@@ -1,7 +1,7 @@
 (function(){
   "use strict";
   const ROOT="https://www-infinity4.github.io/";
-  const OMNI_CONTROL_URL=ROOT+"Omni-TV/omni-control.js?v=20260914-network1";
+  const OMNI_CONTROL_URL=ROOT+"Omni-TV/omni-control.js?v=20260914-network2";
   const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
   const NAV_URL=ROOT+"Control-Phi/channel-navigation.js?v=20260914-nav1";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
@@ -74,8 +74,9 @@
     Object.keys(window).filter(name=>/Engine$/.test(name)).forEach(name=>stripLegacyCommercials(window[name]));
   }
 
-  // Omni Control is the visible remote. It reads Control Phi's registry directly
-  // and falls back to raw GitHub, so a Control Phi Pages failure cannot remove Channels.
+  // Omni Control network2 is the visible remote on every legacy channel page.
+  // The URL version is deliberate: it breaks the browser cache of the older
+  // narrow-menu implementation that was still visible in the field recordings.
   addScript(OMNI_CONTROL_URL,"infinityOmniControl");
   bootstrapMovieSourceFarm();
   addScript(NAV_URL,"infinityCanonicalChannelNavigation");
@@ -85,8 +86,8 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",hardenLoadedEngines,{once:true});
   else setTimeout(hardenLoadedEngines,0);
 
-  window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control+Control-Phi";
-  window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js";
+  window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control-network2+Control-Phi";
+  window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js?v=20260914-network2";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
   window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v3+playback-guard-v2";
 })();
