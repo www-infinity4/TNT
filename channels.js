@@ -1,12 +1,12 @@
 (function(){
   "use strict";
   const ROOT="https://www-infinity4.github.io/";
-  const OMNI_CONTROL_URL=ROOT+"Omni-TV/omni-control.js?v=20260914-network2";
+  const OMNI_CONTROL_URL=ROOT+"Omni-TV/omni-control.js?v=20260914-network3";
   const CONTROL_URL=ROOT+"Control-Phi/control-phi.js?v=20260914-network3";
   const NAV_URL=ROOT+"Control-Phi/channel-navigation.js?v=20260914-nav1";
   const POLICY_URL=ROOT+"Control-Phi/channel-policy.js?v=20260914-network1";
   const MOVIE_FARM_URL=ROOT+"Control-Phi/movie-source-farm.js?v=20260914-unique3";
-  const PLAYBACK_GUARD_URL=ROOT+"Control-Phi/movie-source-playback-guard.js?v=20260914-playback2";
+  const PLAYBACK_GUARD_URL=ROOT+"Control-Phi/movie-source-playback-guard.js?v=20260914-playback3";
   const FALLBACK_URL=ROOT+"News-Phi/control-phi.js?v=20260914-network3";
   const MOVIE_REPOS=new Set(["hermit-tv","star-launcher","hbo","cinemax","showtime","starz","encore","tnt"]);
 
@@ -74,9 +74,9 @@
     Object.keys(window).filter(name=>/Engine$/.test(name)).forEach(name=>stripLegacyCommercials(window[name]));
   }
 
-  // Omni Control network2 is the visible remote on every legacy channel page.
-  // The URL version is deliberate: it breaks the browser cache of the older
-  // narrow-menu implementation that was still visible in the field recordings.
+  // Omni Control network3 is the visible remote on every legacy channel page.
+  // Wallet UI updates are event-driven/idempotent so the shared remote cannot
+  // create a MutationObserver feedback loop that freezes channel playback.
   addScript(OMNI_CONTROL_URL,"infinityOmniControl");
   bootstrapMovieSourceFarm();
   addScript(NAV_URL,"infinityCanonicalChannelNavigation");
@@ -86,8 +86,8 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",hardenLoadedEngines,{once:true});
   else setTimeout(hardenLoadedEngines,0);
 
-  window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control-network2+Control-Phi";
-  window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js?v=20260914-network2";
+  window.INFINITY_CHANNEL_NETWORK_SOURCE="Omni-Control-network3+Control-Phi";
+  window.INFINITY_CHANNEL_REMOTE_SOURCE="Omni-TV/omni-control.js?v=20260914-network3";
   window.INFINITY_CHANNEL_BREAK_POLICY="legacy-fixed-breaks-disabled";
-  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v3+playback-guard-v2";
+  window.INFINITY_MOVIE_CATALOG_POLICY="unique-source-farm-v3+playback-guard-v3";
 })();
